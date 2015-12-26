@@ -19,4 +19,6 @@ void ADC_userInit(void);
 void GPIO_userInit(void);
 //UART初始化函数
 void UART_userInit(void);
+//PIT初始化函数
+void PIT_userInit(void);
 #endif

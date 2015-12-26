@@ -3,6 +3,7 @@
 #include "adc.h"
 #include "gpio.h"
 #include "uart.h"
+#include "pit.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] = 
 { 
@@ -90,4 +91,12 @@ void GPIO_userInit(void){
 //UART初始化函数
 void UART_userInit(void){
 	UART_PortInit(UART1_RX_PE01_TX_PE00,128000); //参数二 波特率 待定
+}
+
+//PIT初始化函数
+void PIT_userInit(void){
+	PIT_InitTypeDef pit_initer;
+	pit_initer.PITx = PIT0;
+	pit_initer.PIT_Interval = 1; //单位MS
+	PIT_Init(&pit_initer);
 }
