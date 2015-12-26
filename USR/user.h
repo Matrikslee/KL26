@@ -12,7 +12,7 @@
 //	3,4,5,6,7: 电磁传感器
 //返回：信号值
 //======================================================================
-uint32_t ADC_GetValue(uint32_t channel);
+uint32_t ADC_GetValue(uint8_t chl);
 //ADC初始化函数
 void ADC_userInit(void);
 //GPIO初始化函数
