@@ -15,8 +15,7 @@
 #include "stdio.h"
 #include "TPM.h"
 #include "user.h"
-
-#define duty_to_value(x) (uint16_t)(65535*(x%100)/100.)
+#include "app.h"
 
 int main(void){
   //请认真确定你的外部晶振是否对应，8M请输入参数ClockSource_EX8M，
@@ -26,15 +25,33 @@ int main(void){
   DelayInit();
 	ledInit(PTB,0);
 	
-  EnableInterrupts();
+  DisableInterrupts();
 	
 	PWMInit(PTA4,DIV1,65535);
 	PWMInit(PTA12,DIV1,65535);
-	ADC_userInit();
-	GPIO_userInit();
+	//ADC_userInit();
+	//GPIO_userInit();
+	//PIT_userInit();
 	
 	while(1){
-    DelayMs(500);
-    twinkleLed(PTB,0);
+		/*
+		balanceDataTypeDef tmp_balance;
+		spdTypeDef spd;
+		uint8_t Tim = timer();
+		switch(Tim){
+			case 1:
+				getBalanceData(&tmp_balance);
+				break;
+			case 2:
+				spd.m_spd_balance = balanceControl(&tmp_balance);
+				break;
+			case 5:
+				motorControl(&spd);
+				break;
+			default:
+				break;
+		}*/
+		PWMOutput(PTA4, 0x8000);
+		PWMOutput(PTA12, 0x7000);
 	}
 }

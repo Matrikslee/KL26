@@ -4,6 +4,9 @@
 
 #include "stdint.h"
 
+
+//ADC初始化函数
+void ADC_userInit(void);
 //======================================================================
 //获取ADC口信号函数
 //入口：通道(channel):
@@ -13,12 +16,12 @@
 //返回：信号值
 //======================================================================
 uint32_t ADC_GetValue(uint8_t chl);
-//ADC初始化函数
-void ADC_userInit(void);
 //GPIO初始化函数
 void GPIO_userInit(void);
 //UART初始化函数
 void UART_userInit(void);
 //PIT初始化函数
 void PIT_userInit(void);
+//定时器
+uint8_t timer(void);
 #endif

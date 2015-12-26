@@ -11,7 +11,7 @@
 //========================================================================
 void PWMInit(uint8_t Pin, uint8_t Div, uint16_t modValue)
 {    
-	TPM_Type *pstTPMModule;  
+	TPM_Type *pstTPMModule;
 	uint8_t  TPMCh;
 	//选择TPM时钟源
 	SIM->SOPT2 |= SIM_SOPT2_TPMSRC(1);
@@ -143,13 +143,13 @@ void PWMInit(uint8_t Pin, uint8_t Div, uint16_t modValue)
             pstTPMModule = TPM2;
             TPMCh = CH0;
             break;
-        /*    
+
         case PTE23:
             
             PORTE->PCR[23] = PORT_PCR_MUX(0x3) | PORT_PCR_DSE_MASK;
             pstTPMModule = TPM2; 
             TPMCh = CH1;
-            break;*/
+            break;
             
         case PTA1:
             
@@ -239,16 +239,12 @@ void PWMInit(uint8_t Pin, uint8_t Div, uint16_t modValue)
 // 返回参数：无
 // 实现更改PWM占空比
 //========================================================================
-void PWMOutput(uint8_t Pin, uint16_t Duty)
-{
-
+void PWMOutput(uint8_t Pin, uint16_t Duty){
     TPM_Type *pstTPMModule;
 
     uint8_t  TPMCh;
 
-       
-    switch (Pin)
-    {
+    switch (Pin){
         case PTE24:
             pstTPMModule = TPM0;
             TPMCh = CH0;
@@ -338,11 +334,11 @@ void PWMOutput(uint8_t Pin, uint16_t Duty)
             pstTPMModule = TPM2;
             TPMCh = CH0;
             break;
-        /*    
+
         case PTE23:
             pstTPMModule = TPM2; 
             TPMCh = CH1;
-            break;*/
+            break;
             
         case PTA1: 
             pstTPMModule = TPM2;
@@ -375,14 +371,10 @@ void PWMOutput(uint8_t Pin, uint16_t Duty)
             TPMCh = CH1;
             break;
 
-            
         default:break;
         
-
     }
-     
    TPM_CnV_REG(pstTPMModule,TPMCh) = Duty;
-
 }
 
 

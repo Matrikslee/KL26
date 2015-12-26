@@ -97,6 +97,18 @@ void UART_userInit(void){
 void PIT_userInit(void){
 	PIT_InitTypeDef pit_initer;
 	pit_initer.PITx = PIT0;
-	pit_initer.PIT_Interval = 1; //单位MS
+	pit_initer.PIT_Interval = 20; //单位MS
 	PIT_Init(&pit_initer);
+}
+
+//定时器
+uint8_t timer(void){
+	static uint8_t cnt = 0;
+	ITStatus state = PIT_GetITStatus(PIT0, PIT_IT_TIF);
+	if(cnt==5) { cnt = 0; }
+ 	if(state == SET){
+		++cnt;
+ 		PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
+ 	}
+	return cnt;
 }

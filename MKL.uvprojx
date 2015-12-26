@@ -513,6 +513,11 @@
               <FileType>1</FileType>
               <FilePath>.\USR\main.c</FilePath>
             </File>
+            <File>
+              <FileName>app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USR\app.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
