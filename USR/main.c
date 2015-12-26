@@ -16,7 +16,7 @@
 #include "TPM.h"
 #include "user.h"
 
-#define duty_to_value(x) (uint16_t)(65535*x)
+#define duty_to_value(x) (uint16_t)(65535*(x%100)/100.)
 
 int main(void){
   //请认真确定你的外部晶振是否对应，8M请输入参数ClockSource_EX8M，
@@ -29,7 +29,7 @@ int main(void){
   EnableInterrupts();
 	
 	PWMInit(PTA4,DIV1,65535);
-	PWMInit(PTA12,DIV1,65535);	
+	PWMInit(PTA12,DIV1,65535);
 	ADC_userInit();
 	GPIO_userInit();
 	
@@ -38,7 +38,3 @@ int main(void){
     twinkleLed(PTB,0);
 	}
 }
-
-
-
-
