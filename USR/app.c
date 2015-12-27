@@ -25,7 +25,7 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO  0x970 //平衡陀螺仪静止时的输出值 1380
+#define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值 1380
 #define ACCZ_ZERO  0x500 //加速度计竖直时的输出值 前最大2459，后最小1965
 
 //采集平衡环所需数据
@@ -34,18 +34,18 @@ void getBalanceData(balanceDataTypeDef* data){
 	uint16_t tmp_accz, tmp_gyro;
 	//采集并初步处理加速度计的值
 	tmp_accz = ADC_GetValue(0);
-	tmp = ((tmp_accz>>4)-ACCZ_ZERO)*0.100708;            // 3300/65536/800*100=0.006294
+	tmp = ((tmp_accz>>4)-ACCZ_ZERO)*0.100708;
 	if(tmp>100) { tmp = 100; }
 	if(tmp<-100) { tmp = -100; }
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
 	//采集并初步处理陀螺仪的值
 	tmp_gyro = ADC_GetValue(1);
-	data->m_gyro = ((GYRO_ZERO-(tmp_gyro>>4))*0.120248); // 3300/65536/10/0.67=0.00744
+	data->m_gyro = ((GYRO_ZERO-(tmp_gyro>>4))*0.120248);
 }
 
 // 计算平衡环占空比
 int16_t balanceControl(const balanceDataTypeDef* data){
-	const float balanceKp = 4800;
+	const float balanceKp = 1000;
 	const float balanceKd = 30;
 	const float balancedAngle = 5.0;
 	static angleTypeDef angle;
@@ -108,8 +108,8 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 void motorControl(const spdTypeDef* spd){
 	uint16_t left, right;
 	
-	left = (uint16_t)(32768+spd->m_spd_balance);
-	right = (uint16_t)(32768+spd->m_spd_balance);
+	left = (uint16_t)(32768-spd->m_spd_balance);
+	right = (uint16_t)(32768-spd->m_spd_balance);
 	
 	if(left>MAX_SPD) left = MAX_SPD;
 	else if(left<MIN_SPD)left = MIN_SPD;

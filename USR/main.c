@@ -21,7 +21,7 @@ int main(void){
   //请认真确定你的外部晶振是否对应，8M请输入参数ClockSource_EX8M，
 	//50M请输入参数ClockSource_EX50M。超频频率请使用 go to查看函数定义
   SystemClockSetup(ClockSource_EX50M,CoreClock_120M);
-
+	UART_PortInit(UART0_RX_PD06_TX_PD07,128000);
   DelayInit();
 	ledInit(PTB,0);
 	
@@ -29,12 +29,12 @@ int main(void){
 	
 	PWMInit(PTA4,DIV1,65535);
 	PWMInit(PTA12,DIV1,65535);
-	//ADC_userInit();
-	//GPIO_userInit();
-	//PIT_userInit();
+	ADC_userInit();
+	GPIO_userInit();
+	PIT_userInit();
+	UART_userInit();
 	
 	while(1){
-		/*
 		balanceDataTypeDef tmp_balance;
 		spdTypeDef spd;
 		uint8_t Tim = timer();
@@ -50,8 +50,6 @@ int main(void){
 				break;
 			default:
 				break;
-		}*/
-		PWMOutput(PTA4, 0x8000);
-		PWMOutput(PTA12, 0x7000);
+		}
 	}
 }
