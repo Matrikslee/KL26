@@ -25,8 +25,8 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值 1380
-#define ACCZ_ZERO  0x500 //加速度计竖直时的输出值 前最大2459，后最小1965
+#define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值
+#define ACCZ_ZERO  0x4F0 //加速度计竖直时的输出值
 
 //采集平衡环所需数据
 void getBalanceData(balanceDataTypeDef* data){
@@ -47,7 +47,7 @@ void getBalanceData(balanceDataTypeDef* data){
 int16_t balanceControl(const balanceDataTypeDef* data){
 	const float balanceKp = 1000;
 	const float balanceKd = 30;
-	const float balancedAngle = 5.0;
+	const float balancedAngle = 10.;
 	static angleTypeDef angle;
 	float errAngle;
 	kalman(data, &angle);
@@ -104,6 +104,9 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 	angle->angleDot = data->m_gyro-qBias;
 }
 
+const uint32_t deathVotageLeft = 800;
+const uint32_t deathVotageRight = 600;
+
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
 	uint16_t left, right;
@@ -115,6 +118,9 @@ void motorControl(const spdTypeDef* spd){
 	else if(left<MIN_SPD)left = MIN_SPD;
 	if(right>MAX_SPD) right = MAX_SPD;
 	else if(right<MIN_SPD) right = MIN_SPD;
+	
+	right += deathVotageRight * (right>0x8000?1:-1);
+	left += deathVotageLeft * (left>0x8000?1:-1);
 	
 	PWMOutput(PTA5,right);
 	PWMOutput(PTA12,left);

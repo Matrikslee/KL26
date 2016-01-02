@@ -27,7 +27,7 @@ int main(void){
 	
   DisableInterrupts();
 	
-	PWMInit(PTA4,DIV1,65535);
+	PWMInit(PTA5,DIV1,65535);
 	PWMInit(PTA12,DIV1,65535);
 	ADC_userInit();
 	GPIO_userInit();
