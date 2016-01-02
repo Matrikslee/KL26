@@ -116,6 +116,6 @@ void motorControl(const spdTypeDef* spd){
 	if(right>MAX_SPD) right = MAX_SPD;
 	else if(right<MIN_SPD) right = MIN_SPD;
 	
-	PWMOutput(PTA4,right);
+	PWMOutput(PTA5,right);
 	PWMOutput(PTA12,left);
 }
