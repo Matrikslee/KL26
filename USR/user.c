@@ -88,30 +88,10 @@ void GPIO_userInit(void){
 	}
 }
 
-//UART初始化函数
-void UART_userInit(void){
-	UART_InitTypeDef uart_initer;
-	uart_initer.UARTxMAP = UART1_RX_PE01_TX_PE00;
-	uart_initer.UART_BaudRate = 128000;
-	UART_Init(&uart_initer); //参数二 波特率 待定
-}
-
 //PIT初始化函数
 void PIT_userInit(void){
 	PIT_InitTypeDef pit_initer;
 	pit_initer.PITx = PIT0;
 	pit_initer.PIT_Interval = 1; //单位MS
 	PIT_Init(&pit_initer);
-}
-
-//定时器
-uint8_t timer(void){
-	static uint8_t cnt = 0;
-	ITStatus state = PIT_GetITStatus(PIT0, PIT_IT_TIF);
-	if(cnt==5) { cnt = 0; }
- 	if(state == SET){
-		++cnt;
- 		PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
- 	}
-	return cnt;
 }

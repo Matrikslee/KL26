@@ -33,31 +33,28 @@ void getBalanceData(balanceDataTypeDef* data){
 	float tmp;
 	uint16_t tmp_accz, tmp_gyro;
 	//采集并初步处理加速度计的值
-	tmp_accz = ADC_GetValue(0);
-	tmp = ((tmp_accz>>4)-ACCZ_ZERO)*0.100708;
+	tmp_accz = ADC_GetValue(0)>>4;
+	tmp = (tmp_accz-ACCZ_ZERO)*0.100708;
 	if(tmp>100) { tmp = 100; }
 	if(tmp<-100) { tmp = -100; }
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
 	//采集并初步处理陀螺仪的值
-	tmp_gyro = ADC_GetValue(1);
-	data->m_gyro = ((GYRO_ZERO-(tmp_gyro>>4))*0.120248);
+	tmp_gyro = ADC_GetValue(1)>>4;
+	data->m_gyro = (GYRO_ZERO-tmp_gyro)*0.120248;
 }
 
 // 计算平衡环占空比
-int16_t balanceControl(const balanceDataTypeDef* data){
-	const float balanceKp = 1000;
-	const float balanceKd = 30;
-	const float balancedAngle = 10.;
-	static angleTypeDef angle;
-	float errAngle;
-	kalman(data, &angle);
-	errAngle =  angle.angle - balancedAngle;
-	return (int32_t)(balanceKp*errAngle+balanceKd*angle.angleDot);
+int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle) {
+	static const float balanceKp = 1500;
+	static const float balanceKd = 0;
+	static const float balancedAngle = 3.2;
+	kalman(data, angle);
+	return (int32_t)(balanceKp*(angle->angle - balancedAngle)+balanceKd*angle->angleDot);
 }
 
 // 卡尔曼滤波函数
 void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
-	const float qAngle=0.001, qGyro=0.003, rAngle=0.67, dt=0.005;
+	static const float qAngle=0.001, qGyro=0.003, rAngle=0.67, dt=0.005;
 	static float e;
 	static float qBias;
 	static float k0, k1;
@@ -67,7 +64,7 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 	static float pDot[4] ={0,0,0,0};
 	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
 	// 先验估计
-	angle->angle += (data->m_gyro-qBias)*dt;             
+	angle->angle += (data->m_gyro-qBias)*dt;
 	// Pk-' 先验估计误差协方差的微分
 	pDot[0] = qAngle - p[0][1] - p[1][0]; 
 	pDot[1] = -p[1][1];
@@ -86,7 +83,7 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 	
 	e = rAngle + pCt0;
 	// Kk
-	k0 = pCt0 / e;                         
+	k0 = pCt0 / e;
 	k1 = pCt1 / e;
 	
 	t0 = pCt0;
@@ -107,21 +104,21 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 const uint32_t deathVotageLeft = 800;
 const uint32_t deathVotageRight = 600;
 
+int32_t left, right;
+
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
-	uint16_t left, right;
+	left = (uint32_t)(32768-spd->m_spd_balance);
+	right = (uint32_t)(32768-spd->m_spd_balance);
 	
-	left = (uint16_t)(32768-spd->m_spd_balance);
-	right = (uint16_t)(32768-spd->m_spd_balance);
+	right += deathVotageRight * (right>0x8000?1:-1);
+	left += deathVotageLeft * (left>0x8000?1:-1);
 	
 	if(left>MAX_SPD) left = MAX_SPD;
 	else if(left<MIN_SPD)left = MIN_SPD;
 	if(right>MAX_SPD) right = MAX_SPD;
 	else if(right<MIN_SPD) right = MIN_SPD;
-	
-	right += deathVotageRight * (right>0x8000?1:-1);
-	left += deathVotageLeft * (left>0x8000?1:-1);
-	
+
 	PWMOutput(PTA5,right);
 	PWMOutput(PTA12,left);
 }

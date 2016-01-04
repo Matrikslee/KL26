@@ -17,11 +17,24 @@
 #include "user.h"
 #include "app.h"
 
+
+spdTypeDef spd;
+angleTypeDef angle;
+balanceDataTypeDef tmp_balance;
+int cnt = 0;
+
+int limit(int x, int lmt) {
+	if(x>lmt) return lmt;
+	if(x<-lmt) return -lmt;
+	return x;
+}
+
 int main(void){
   //请认真确定你的外部晶振是否对应，8M请输入参数ClockSource_EX8M，
 	//50M请输入参数ClockSource_EX50M。超频频率请使用 go to查看函数定义
   SystemClockSetup(ClockSource_EX50M,CoreClock_120M);
 	UART_PortInit(UART0_RX_PD06_TX_PD07,128000);
+	UART_PortInit(UART1_RX_PE01_TX_PE00,96000);
   DelayInit();
 	ledInit(PTB,0);
 	
@@ -32,24 +45,23 @@ int main(void){
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
-	UART_userInit();
 	
 	while(1){
-		balanceDataTypeDef tmp_balance;
-		spdTypeDef spd;
-		uint8_t Tim = timer();
-		switch(Tim){
-			case 1:
-				getBalanceData(&tmp_balance);
-				break;
-			case 2:
-				spd.m_spd_balance = balanceControl(&tmp_balance);
-				break;
-			case 5:
-				motorControl(&spd);
-				break;
-			default:
-				break;
+		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
+			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
+			switch(cnt = (cnt+1)%5){
+				case 0:
+					getBalanceData(&tmp_balance);
+					break;
+				case 1:
+					spd.m_spd_balance = (int16_t)limit(balanceControl(&tmp_balance, &angle),32767);
+					break;
+				case 4:
+					motorControl(&spd);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 }

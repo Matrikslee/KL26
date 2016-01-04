@@ -18,10 +18,6 @@ void ADC_userInit(void);
 uint32_t ADC_GetValue(uint8_t chl);
 //GPIO初始化函数
 void GPIO_userInit(void);
-//UART初始化函数
-void UART_userInit(void);
 //PIT初始化函数
 void PIT_userInit(void);
-//定时器
-uint8_t timer(void);
 #endif

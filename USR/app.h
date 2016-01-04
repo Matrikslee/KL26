@@ -28,12 +28,14 @@ typedef struct {
 void getBalanceData(balanceDataTypeDef* data);
 
 //平衡环占空比
-int16_t balanceControl(const balanceDataTypeDef* data);
+int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle);
 
 // 卡尔曼滤波函数
 void kalman(const balanceDataTypeDef* data, angleTypeDef* outAngle);
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd);
+
+int limit(int x, int lmt);
 
 #endif
