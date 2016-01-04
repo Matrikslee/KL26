@@ -58,6 +58,7 @@ int main(void){
 					break;
 				case 4:
 					motorControl(&spd);
+						twinkleLed(PTB,0);
 					break;
 				default:
 					break;
