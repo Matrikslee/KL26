@@ -14,9 +14,9 @@ typedef struct {
 } angleTypeDef;
 
 typedef struct {
-	int16_t m_spd_speed;
-	int16_t m_spd_balance;
-	int16_t m_spd_direction;
+	int32_t m_spd_speed;
+	int32_t m_spd_balance;
+	int32_t m_spd_direction;
 } spdTypeDef;
 
 typedef struct {

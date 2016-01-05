@@ -21,7 +21,7 @@
 spdTypeDef spd;
 angleTypeDef angle;
 balanceDataTypeDef tmp_balance;
-int cnt = 0;
+uint8_t cnt = 0;
 
 int limit(int x, int lmt) {
 	if(x>lmt) return lmt;
@@ -40,13 +40,9 @@ int main(void){
 	
   DisableInterrupts();
 	
-<<<<<<< HEAD
 	PWMInit(PTA5,DIV1,6000);
 	PWMInit(PTA12,DIV1,6000);
-=======
-	PWMInit(PTA5,DIV1,65535);
-	PWMInit(PTA12,DIV1,65535);
->>>>>>> 46ad3fd43d565a4d329691c60de39315c894ac0e
+
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
@@ -54,16 +50,17 @@ int main(void){
 	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
-			switch(cnt = (cnt+1)%5){
+			switch(cnt++%5){
 				case 0:
 					getBalanceData(&tmp_balance);
+					kalman(&tmp_balance, &angle);
 					break;
 				case 1:
-					spd.m_spd_balance = (int16_t)limit(balanceControl(&tmp_balance, &angle),32767);
+					spd.m_spd_balance = (int32_t)limit(balanceControl(&tmp_balance, &angle),32767);
 					break;
 				case 4:
 					motorControl(&spd);
-						twinkleLed(PTB,0);
+					twinkleLed(PTB,0);
 					break;
 				default:
 					break;
