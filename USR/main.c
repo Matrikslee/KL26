@@ -40,8 +40,13 @@ int main(void){
 	
   DisableInterrupts();
 	
+<<<<<<< HEAD
 	PWMInit(PTA5,DIV1,6000);
 	PWMInit(PTA12,DIV1,6000);
+=======
+	PWMInit(PTA5,DIV1,65535);
+	PWMInit(PTA12,DIV1,65535);
+>>>>>>> 46ad3fd43d565a4d329691c60de39315c894ac0e
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();

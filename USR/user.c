@@ -94,5 +94,8 @@ void PIT_userInit(void){
 	pit_initer.PITx = PIT0;
 	pit_initer.PIT_Interval = 1; //µ¥Î»MS
 	PIT_Init(&pit_initer);
+<<<<<<< HEAD
 //	PIT_Start(PIT0);
+=======
+>>>>>>> 46ad3fd43d565a4d329691c60de39315c894ac0e
 }
