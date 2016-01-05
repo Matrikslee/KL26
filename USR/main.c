@@ -40,8 +40,8 @@ int main(void){
 	
   DisableInterrupts();
 	
-	PWMInit(PTA5,DIV1,65535);
-	PWMInit(PTA12,DIV1,65535);
+	PWMInit(PTA5,DIV1,6000);
+	PWMInit(PTA12,DIV1,6000);
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
@@ -58,6 +58,7 @@ int main(void){
 					break;
 				case 4:
 					motorControl(&spd);
+						twinkleLed(PTB,0);
 					break;
 				default:
 					break;

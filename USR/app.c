@@ -2,6 +2,7 @@
 #include "user.h"
 #include "TPM.h"
 
+
 //倾角值表，注意：以加速度计竖直状态时为0度
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
@@ -28,6 +29,7 @@ const float  Asin_to_Angle[] = {
 #define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值
 #define ACCZ_ZERO  0x4F0 //加速度计竖直时的输出值
 
+
 //采集平衡环所需数据
 void getBalanceData(balanceDataTypeDef* data){
 	float tmp;
@@ -45,16 +47,16 @@ void getBalanceData(balanceDataTypeDef* data){
 
 // 计算平衡环占空比
 int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle) {
-	static const float balanceKp = 1500;
+	static const float balanceKp = 80;
 	static const float balanceKd = 0;
-	static const float balancedAngle = 3.2;
+	static const float balancedAngle = 26.2;
 	kalman(data, angle);
 	return (int32_t)(balanceKp*(angle->angle - balancedAngle)+balanceKd*angle->angleDot);
 }
 
 // 卡尔曼滤波函数
 void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
-	static const float qAngle=0.001, qGyro=0.003, rAngle=0.67, dt=0.005;
+	static const float qAngle=0.001, qGyro=0.003, rAngle=0.67, dt=0.002;
 	static float e;
 	static float qBias;
 	static float k0, k1;
@@ -101,18 +103,18 @@ void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
 	angle->angleDot = data->m_gyro-qBias;
 }
 
-const uint32_t deathVotageLeft = 800;
-const uint32_t deathVotageRight = 600;
+//const uint32_t deathVotageLeft = 800;
+//const uint32_t deathVotageRight = 600;
 
 int32_t left, right;
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
-	left = (uint32_t)(32768-spd->m_spd_balance);
-	right = (uint32_t)(32768-spd->m_spd_balance);
+	left = (uint32_t)(3000-spd->m_spd_balance);
+	right = (uint32_t)(3000-spd->m_spd_balance);
 	
-	right += deathVotageRight * (right>0x8000?1:-1);
-	left += deathVotageLeft * (left>0x8000?1:-1);
+//	right += deathVotageRight * (right>0x8000?1:-1);
+//	left += deathVotageLeft * (left>0x8000?1:-1);
 	
 	if(left>MAX_SPD) left = MAX_SPD;
 	else if(left<MIN_SPD)left = MIN_SPD;

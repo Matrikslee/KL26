@@ -5,7 +5,7 @@
 #include "stdint.h"
 
 #define SPD_LMT 200
-#define MAX_SPD (65535-SPD_LMT)
+#define MAX_SPD (6000-SPD_LMT)
 #define MIN_SPD (0+SPD_LMT)
 
 typedef struct {
