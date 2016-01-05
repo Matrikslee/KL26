@@ -47,80 +47,70 @@ void getBalanceData(balanceDataTypeDef* data){
 
 // 计算平衡环占空比
 int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle) {
-	static const float balanceKp = 200;
+	static const float balanceKp = 300;
 	static const float balanceKd = 0;
-	static const float balancedAngle = 13.0;
-	return (int32_t)(balanceKp*(angle->angle - balancedAngle)+balanceKd*angle->angleDot);
+	static const float balancedAngle = 6.9;
+	return (int32_t)(balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate);
 }
 
 // 卡尔曼滤波函数
-void kalman(const balanceDataTypeDef* data, angleTypeDef* angle){
-	static const float qAngle=0.001, qGyro=0.003, rAngle=0.67, dt=0.005;
-	static float e;
-	static float qBias;
-	static float k0, k1;
-	static float t0, t1;
-	static float angleErr;
-	static float pCt0, pCt1;
-	static float pDot[4] ={0,0,0,0};
-	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
-	// 先验估计
-	angle->angle += (data->m_gyro-qBias)*dt;
-	// Pk-' 先验估计误差协方差的微分
-	pDot[0] = qAngle - p[0][1] - p[1][0]; 
-	pDot[1] = -p[1][1];
-	pDot[2] = -p[1][1];
-	pDot[3] = qGyro;
-	// Pk- 先验估计误差协方差微分的积分=先验估计误差协方差
-	p[0][0] += pDot[0] * dt;              
-	p[0][1] += pDot[1] * dt;
-	p[1][0] += pDot[2] * dt;
-	p[1][1] += pDot[3] * dt;
-	// zk-先验估计
-	angleErr = data->m_accz - angle->angle;
+void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
+	static const float qAngle = 0.001f;
+	static const float qBias = 0.003f;
+	static const float rMeasure = 0.03f;
+	static const float dt = 0.005f;
+	static float P[2][2] = {{0, 0}, {0, 0}};
+	static float bias = 0.0f;
+	static float S, K[2], angleErr;
 	
-	pCt0 = p[0][0];
-	pCt1 = p[1][0];
+	// Step 1 Update xhat
+	result->m_rate = measureData->m_gyro - bias;
+	result->m_angle += result->m_rate*dt;
 	
-	e = rAngle + pCt0;
-	// Kk
-	k0 = pCt0 / e;
-	k1 = pCt1 / e;
+	//Step 2 Update estimation error covariance
+	P[0][0] += dt*(dt*P[1][1] - P[0][1] - P[1][0] + qAngle);
+	P[0][1] -= dt*P[1][1];
+	P[1][0] -= dt*P[1][1];
+	P[1][1] += dt*qBias;
 	
-	t0 = pCt0;
-	t1 = p[0][1];
-	// 后验估计误差协方差
-	p[0][0] -= k0 * t0;
-	p[0][1] -= k0 * t1;
-	p[1][0] -= k1 * t0;
-	p[1][1] -= k1 * t1;
-	
-	// 后验估计	
-	qBias+= k1 * angleErr;
-	// 输出值(后验估计)的微分=角速度
-	angle->angle	+= k0 * angleErr;
-	angle->angleDot = data->m_gyro-qBias;
-}
+	//Step 3 Angle difference
+	angleErr = measureData->m_accz - result->m_angle;
 
-//const uint32_t deathVotageLeft = 800;
-//const uint32_t deathVotageRight = 600;
+	//Step 4 Estimate error
+	S = P[0][0] + rMeasure;
+	
+	//Step 5 Kalman gain
+	K[0] = P[0][0] / S;
+	K[1] = P[1][0] / S;
+	
+	//Step 6 Calculate angle and bias
+	result->m_angle += K[0]*angleErr;
+	bias += K[1]*angleErr;	
+	
+	//Step 7 Calculate estimation error covariance 
+	P[0][0] -= K[0] * P[0][0];
+	P[0][1] -= K[0] * P[0][1];
+	P[1][0] -= K[1] * P[0][0];
+	P[1][1] -= K[1] * P[0][1];
+}
 
 int32_t left, right;
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
+	//const static uint32_t deathVotageLeft = 800;
+	//const static uint32_t deathVotageRight = 600;	
 	left = (uint32_t)(3000-spd->m_spd_balance);
 	right = (uint32_t)(3000-spd->m_spd_balance);
 
-	
 //	right += deathVotageRight * (right>0x8000?1:-1);
 //	left += deathVotageLeft * (left>0x8000?1:-1);
 	
-	if(left>MAX_SPD) left = MAX_SPD;
-	else if(left<MIN_SPD)left = MIN_SPD;
-	if(right>MAX_SPD) right = MAX_SPD;
-	else if(right<MIN_SPD) right = MIN_SPD;
-
+	left>MAX_SPD?left = MAX_SPD:0;
+	left<MIN_SPD?left = MIN_SPD:0;
+	right>MAX_SPD?right = MAX_SPD:0;
+	right<MIN_SPD?right = MIN_SPD:0;
+	
 	PWMOutput(PTA5,right);
 	PWMOutput(PTA12,left);
 }

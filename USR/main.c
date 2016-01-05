@@ -50,15 +50,15 @@ int main(void){
 	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
-			switch(cnt++%5){
-				case 0:
-					getBalanceData(&tmp_balance);
-					kalman(&tmp_balance, &angle);
-					break;
+			switch(++cnt%5){
 				case 1:
-					spd.m_spd_balance = (int32_t)limit(balanceControl(&tmp_balance, &angle),32767);
+					getBalanceData(&tmp_balance);
+					kalmanFilter(&tmp_balance, &angle);
 					break;
-				case 4:
+				case 2:
+					spd.m_spd_balance = (int32_t)limit(balanceControl(&tmp_balance, &angle),3000);
+					break;
+				case 0:
 					motorControl(&spd);
 					twinkleLed(PTB,0);
 					break;

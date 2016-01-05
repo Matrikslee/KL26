@@ -9,8 +9,8 @@
 #define MIN_SPD (0+SPD_LMT)
 
 typedef struct {
-	float angle;
-	float angleDot;
+	float m_angle;
+	float m_rate;
 } angleTypeDef;
 
 typedef struct {
@@ -31,7 +31,7 @@ void getBalanceData(balanceDataTypeDef* data);
 int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle);
 
 // 卡尔曼滤波函数
-void kalman(const balanceDataTypeDef* data, angleTypeDef* outAngle);
+void kalmanFilter(const balanceDataTypeDef* data, angleTypeDef* outAngle);
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd);
