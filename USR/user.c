@@ -4,9 +4,10 @@
 #include "gpio.h"
 #include "uart.h"
 #include "pit.h"
+#include "sys.h"
 
-static const PeripheralMapTypeDef ADC_Check_Maps[] = 
-{ 
+static const PeripheralMapTypeDef ADC_Check_Maps[] =
+{
 	{0, 4, 1,20, 2, 0, 0},  //ADC0_DP0_PE20_DM0_PE21 0
 	{0, 4, 1,16, 2, 1, 0},  //ADC0_DP1_PE16_DM1_PE17 1
 	{0, 4, 1,18, 2, 2, 0},  //ADC0_DP2_PE18_DM2_PE19 2
@@ -33,7 +34,14 @@ static const PeripheralMapTypeDef ADC_Check_Maps[] =
 	{0, 3, 1, 6, 1, 7, 1},  //ADC0_SE7B_PD6 23
 };
 
-const uint8_t channel_index[]={8,9,11,10,12,15,16,17};
+//==================================
+//  adc口地址处理
+//	0,1,2: 加速度计的上下、左右、前后
+//	3,4,5 : 陀螺仪X、Z、Y
+//	6,7,8,9: 电磁传感器
+//==================================
+const uint8_t adc_channel_length = 10;
+const uint8_t adc_channel_index[adc_channel_length]={5,7,8,9,10,11,15,16,17,19};
 
 uint32_t ADC_CalxMap(uint8_t chl)
 {
@@ -51,39 +59,38 @@ uint32_t ADC_CalxMap(uint8_t chl)
 //======================================================================
 //获取ADC口信号函数
 //入口：通道(channel):
-//	0: 加速度计
-//	1,2: 陀螺仪
-//	3,4,5,6,7: 电磁传感器
+//具体接口作用见 adc_channel_index处
 //返回：信号值
 //======================================================================
 uint32_t ADC_GetValue(uint8_t index){
-	return ADC_GetConversionValue(ADC_CalxMap(channel_index[index]));
+	return ADC_GetConversionValue(ADC_CalxMap(adc_channel_index[index]));
 }
 
 //ADC初始化函数
 void ADC_userInit(void){
 	ADC_InitTypeDef adc_initer;
 	uint8_t i = 0;
-	for (i = 0; i < 8; ++ i){
-		adc_initer.ADCxMap = ADC_CalxMap(channel_index[i]);
+	for (i = 0; i < adc_channel_length; ++ i){
+		adc_initer.ADCxMap = ADC_CalxMap(adc_channel_index[i]);
 		adc_initer.ADC_Precision = ADC_PRECISION_16BIT;
 		adc_initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
 		ADC_Init(&adc_initer);
 	}
 }
 
-const uint16_t gpio_pin[] = {GPIO_Pin_10, GPIO_Pin_18, GPIO_Pin_3};
+const uint32_t gpio_pin_length = 3;
+const gpioPinTypeDef gpio_pin[gpio_pin_length] = {{PTB, 9}, {PTB,10}, {PTE,3}};
 
 //GPIO初始化函数
 void GPIO_userInit(void){
 	GPIO_InitTypeDef gpio_initer;
 	uint8_t i = 0;
-	for (i = 0; i < 3; ++i){
-		gpio_initer.GPIO_Pin = gpio_pin[i];
+	for (i = 0; i < gpio_pin_length; ++i){
+		gpio_initer.GPIO_Pin = gpio_pin[i].Pin;
 		gpio_initer.GPIO_InitState = Bit_RESET;
 		gpio_initer.GPIO_IRQMode = GPIO_IT_RISING;
 		gpio_initer.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-		gpio_initer.GPIOx = i<2?PTB:PTD;
+		gpio_initer.GPIOx = gpio_pin[i].GPIO;
 		GPIO_Init(&gpio_initer);
 	}
 }
@@ -94,4 +101,12 @@ void PIT_userInit(void){
 	pit_initer.PITx = PIT0;
 	pit_initer.PIT_Interval = 1; //单位MS
 	PIT_Init(&pit_initer);
+}
+
+uint8_t pwmLeft;
+uint8_t pwmRight;
+
+void PWM_userInit(uint8_t left, uint8_t right){
+  PWMInit(pwmLeft = left,DIV1,6000);
+	PWMInit(pwmRight = right,DIV1,6000);
 }

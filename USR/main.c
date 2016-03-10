@@ -17,6 +17,8 @@
 #include "user.h"
 #include "app.h"
 
+#define PWMLEFT PTA6
+#define PWMRIGHT PTA12
 
 spdTypeDef spd;
 angleTypeDef angle;
@@ -37,16 +39,14 @@ int main(void){
 	UART_PortInit(UART1_RX_PE01_TX_PE00,96000);
   DelayInit();
 	ledInit(PTB,0);
-	
-  DisableInterrupts();
-	
-	PWMInit(PTA5,DIV1,6000);
-	PWMInit(PTA12,DIV1,6000);
 
+  DisableInterrupts();
+
+  PWM_userInit(PWMLEFT, PWMRIGHT);
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
-	
+
 	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);

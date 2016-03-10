@@ -2,7 +2,6 @@
 #include "user.h"
 #include "TPM.h"
 
-
 //倾角值表，注意：以加速度计竖直状态时为0度
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
@@ -29,7 +28,6 @@ const float  Asin_to_Angle[] = {
 #define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值
 #define ACCZ_ZERO  0x4F0 //加速度计竖直时的输出值
 
-
 //采集平衡环所需数据
 void getBalanceData(balanceDataTypeDef* data){
 	float tmp;
@@ -41,7 +39,7 @@ void getBalanceData(balanceDataTypeDef* data){
 	if(tmp<-100) { tmp = -100; }
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
 	//采集并初步处理陀螺仪的值
-	tmp_gyro = ADC_GetValue(1)>>4;
+	tmp_gyro = ADC_GetValue(5)>>4;
 	data->m_gyro = (GYRO_ZERO-tmp_gyro)*0.120248;
 }
 
@@ -62,31 +60,31 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	static float P[2][2] = {{0, 0}, {0, 0}};
 	static float bias = 0.0f;
 	static float S, K[2], angleErr;
-	
+
 	// Step 1 Update xhat
 	result->m_rate = measureData->m_gyro - bias;
 	result->m_angle += result->m_rate*dt;
-	
+
 	//Step 2 Update estimation error covariance
 	P[0][0] += dt*(dt*P[1][1] - P[0][1] - P[1][0] + qAngle);
 	P[0][1] -= dt*P[1][1];
 	P[1][0] -= dt*P[1][1];
 	P[1][1] += dt*qBias;
-	
+
 	//Step 3 Angle difference
 	angleErr = measureData->m_accz - result->m_angle;
 
 	//Step 4 Estimate error
 	S = P[0][0] + rMeasure;
-	
+
 	//Step 5 Kalman gain
 	K[0] = P[0][0] / S;
 	K[1] = P[1][0] / S;
-	
+
 	//Step 6 Calculate angle and bias
 	result->m_angle += K[0]*angleErr;
-	bias += K[1]*angleErr;	
-	
+	bias += K[1]*angleErr;
+
 	//Step 7 Calculate estimation error covariance 
 	P[0][0] -= K[0] * P[0][0];
 	P[0][1] -= K[0] * P[0][1];
@@ -94,23 +92,23 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	P[1][1] -= K[1] * P[0][1];
 }
 
-int32_t left, right;
+int32_t motorLeft, motorRight;
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
 	//const static uint32_t deathVotageLeft = 800;
 	//const static uint32_t deathVotageRight = 600;	
-	left = (uint32_t)(3000-spd->m_spd_balance);
-	right = (uint32_t)(3000-spd->m_spd_balance);
+	motorLeft = (uint32_t)(3000-spd->m_spd_balance);
+	motorRight = (uint32_t)(3000-spd->m_spd_balance);
 
 //	right += deathVotageRight * (right>0x8000?1:-1);
 //	left += deathVotageLeft * (left>0x8000?1:-1);
-	
-	left>MAX_SPD?left = MAX_SPD:0;
-	left<MIN_SPD?left = MIN_SPD:0;
-	right>MAX_SPD?right = MAX_SPD:0;
-	right<MIN_SPD?right = MIN_SPD:0;
-	
-	PWMOutput(PTA5,right);
-	PWMOutput(PTA12,left);
+
+	motorLeft>MAX_SPD?motorLeft = MAX_SPD:0;
+	motorLeft<MIN_SPD?motorLeft = MIN_SPD:0;
+	motorRight>MAX_SPD?motorRight = MAX_SPD:0;
+	motorRight<MIN_SPD?motorRight = MIN_SPD:0;
+
+	PWMOutput(pwmRight,right);
+	PWMOutput(pwmLeft,left);
 }

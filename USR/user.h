@@ -3,7 +3,15 @@
 #define __USR_H__
 
 #include "stdint.h"
+#include "sys.h"
 
+typedef struct{
+  GPIO_Type* GPIO;
+  uint16_t Pin;
+} gpioPinTypeDef;
+
+extern uint8_t pwmLeft;
+extern uint8_t pwmRight;
 
 //ADC³õÊ¼»¯º¯Êý
 void ADC_userInit(void);
