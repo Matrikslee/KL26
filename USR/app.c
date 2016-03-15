@@ -1,6 +1,7 @@
 #include "app.h"
 #include "user.h"
 #include "TPM.h"
+#include "include.h"
 
 //倾角值表，注意：以加速度计竖直状态时为0度
 const float  Asin_to_Angle[] = {
@@ -33,7 +34,7 @@ void getBalanceData(balanceDataTypeDef* data){
 	float tmp;
 	uint16_t tmp_accz, tmp_gyro;
 	//采集并初步处理加速度计的值
-	tmp_accz = ADC_GetValue(0)>>4;
+	tmp_accz = ADC_GetValue(2)>>4;
 	tmp = (tmp_accz-ACCZ_ZERO)*0.050708;
 	if(tmp>100) { tmp = 100; }
 	if(tmp<-100) { tmp = -100; }
@@ -47,7 +48,7 @@ void getBalanceData(balanceDataTypeDef* data){
 int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle) {
 	static const float balanceKp = 300;
 	static const float balanceKd = 0;
-	static const float balancedAngle = 6.9;
+	static const float balancedAngle = 6.0;
 	return (int32_t)(balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate);
 }
 
@@ -109,6 +110,4 @@ void motorControl(const spdTypeDef* spd){
 	motorRight>MAX_SPD?motorRight = MAX_SPD:0;
 	motorRight<MIN_SPD?motorRight = MIN_SPD:0;
 
-	PWMOutput(pwmRight,right);
-	PWMOutput(pwmLeft,left);
 }

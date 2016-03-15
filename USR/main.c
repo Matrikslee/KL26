@@ -1,4 +1,3 @@
-
 #include "gpio.h"
 #include "uart.h"
 #include "delay.h"
@@ -17,13 +16,12 @@
 #include "user.h"
 #include "app.h"
 
-#define PWMLEFT PTA6
-#define PWMRIGHT PTA12
-
 spdTypeDef spd;
 angleTypeDef angle;
 balanceDataTypeDef tmp_balance;
 uint8_t cnt = 0;
+const uint32_t pwmNumber = 4;
+const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
 
 int limit(int x, int lmt) {
 	if(x>lmt) return lmt;
@@ -41,14 +39,20 @@ int main(void){
 	ledInit(PTB,0);
 
   DisableInterrupts();
-
-  PWM_userInit(PWMLEFT, PWMRIGHT);
+	PWM_userInit(pwmArray, pwmNumber);                                                                                                                                                                                                                              	  
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
 
 	while(1){
-		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
+		
+		//getBalanceData(&tmp_balance);
+		//kalmanFilter(&tmp_balance, &angle);
+		int i;
+		for ( i = 0; i < pwmNumber; ++i){
+			PWMOutput(pwmArray[i],4000);
+		}
+		/*if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
 			switch(++cnt%5){
 				case 1:
@@ -60,11 +64,11 @@ int main(void){
 					break;
 				case 0:
 					motorControl(&spd);
-					twinkleLed(PTB,0);
+					//twinkleLed(PTB,0);
 					break;
 				default:
 					break;
 			}
-		}
+		}*/
 	}
 }

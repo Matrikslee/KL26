@@ -12,16 +12,16 @@
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
         <TargetCommonOption>
-          <Device>MKL25Z128xxx4</Device>
+          <Device>MKL26Z128xxx4</Device>
           <Vendor>Freescale</Vendor>
           <PackID>Keil.Kinetis_KLxx_DFP.1.0.1</PackID>
           <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IROM(0x00000000,0x20000) IRAM(0x20000000,0x3000) IRAM2(0x1FFFF000,0x1000) CPUTYPE("Cortex-M0+") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD1FFFF000 -FC4000 -FN1 -FF0MK_P128_48MHZ -FS00 -FL020000 -FP0($$Device:MKL25Z128xxx4$Flash\MK_P128_48MHZ.FLM))</FlashDriverDll>
-          <DeviceId>6533</DeviceId>
-          <RegisterFile>$$Device:MKL25Z128xxx4$Device\Include\MKL25Z4.h</RegisterFile>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD1FFFF000 -FC4000 -FN1 -FF0MK_P128_48MHZ -FS00 -FL020000 -FP0($$Device:MKL26Z128xxx4$Flash\MK_P128_48MHZ.FLM))</FlashDriverDll>
+          <DeviceId>6835</DeviceId>
+          <RegisterFile>$$Device:MKL26Z128xxx4$Device\Include\MKL26Z4.h</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -31,7 +31,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:MKL25Z128xxx4$SVD\MKL25Z4.svd</SFDFile>
+          <SFDFile>$$Device:MKL26Z128xxx4$SVD\MKL26Z4.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -147,7 +147,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>7</TargetSelection>
+          <TargetSelection>6</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -365,7 +365,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\DEV;.\DRI;.\SYS</IncludePath>
+              <IncludePath>.\DEV;.\DRI;.\SYS;.\USR</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

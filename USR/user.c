@@ -5,6 +5,7 @@
 #include "uart.h"
 #include "pit.h"
 #include "sys.h"
+#include "TPM.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
 {
@@ -34,12 +35,6 @@ static const PeripheralMapTypeDef ADC_Check_Maps[] =
 	{0, 3, 1, 6, 1, 7, 1},  //ADC0_SE7B_PD6 23
 };
 
-//==================================
-//  adc口地址处理
-//	0,1,2: 加速度计的上下、左右、前后
-//	3,4,5 : 陀螺仪X、Z、Y
-//	6,7,8,9: 电磁传感器
-//==================================
 const uint8_t adc_channel_length = 10;
 const uint8_t adc_channel_index[adc_channel_length]={5,7,8,9,10,11,15,16,17,19};
 
@@ -56,12 +51,6 @@ uint32_t ADC_CalxMap(uint8_t chl)
 	return value;
 }
 
-//======================================================================
-//获取ADC口信号函数
-//入口：通道(channel):
-//具体接口作用见 adc_channel_index处
-//返回：信号值
-//======================================================================
 uint32_t ADC_GetValue(uint8_t index){
 	return ADC_GetConversionValue(ADC_CalxMap(adc_channel_index[index]));
 }
@@ -103,10 +92,9 @@ void PIT_userInit(void){
 	PIT_Init(&pit_initer);
 }
 
-uint8_t pwmLeft;
-uint8_t pwmRight;
-
-void PWM_userInit(uint8_t left, uint8_t right){
-  PWMInit(pwmLeft = left,DIV1,6000);
-	PWMInit(pwmRight = right,DIV1,6000);
+void PWM_userInit(const uint8_t* pwmArray, uint8_t len){
+	int i;
+	for ( i = 0; i < len; ++i){
+		PWMInit(pwmArray[i],DIV1,6000);
+	}
 }
