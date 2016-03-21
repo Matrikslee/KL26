@@ -15,6 +15,7 @@
 #include "TPM.h"
 #include "user.h"
 #include "app.h"
+#include "include.h"
 
 spdTypeDef spd;
 angleTypeDef angle;
@@ -22,6 +23,7 @@ balanceDataTypeDef tmp_balance;
 uint8_t cnt = 0;
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
+const uint32_t maxPwmDuty = 6000;
 
 int limit(int x, int lmt) {
 	if(x>lmt) return lmt;
@@ -37,9 +39,10 @@ int main(void){
 	UART_PortInit(UART1_RX_PE01_TX_PE00,96000);
   DelayInit();
 	ledInit(PTB,0);
+	ledInit(PTC,3);
 
   DisableInterrupts();
-	PWM_userInit(pwmArray, pwmNumber);                                                                                                                                                                                                                              	  
+	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);                                                                                                                                                                                                                              	  
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
@@ -47,28 +50,23 @@ int main(void){
 	while(1){
 		
 		//getBalanceData(&tmp_balance);
-		//kalmanFilter(&tmp_balance, &angle);
-		int i;
-		for ( i = 0; i < pwmNumber; ++i){
-			PWMOutput(pwmArray[i],4000);
-		}
-		/*if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
+		
+		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
-			switch(++cnt%5){
-				case 1:
+//			switch(++cnt%5){
+//				case 0:
 					getBalanceData(&tmp_balance);
 					kalmanFilter(&tmp_balance, &angle);
-					break;
-				case 2:
-					spd.m_spd_balance = (int32_t)limit(balanceControl(&tmp_balance, &angle),3000);
-					break;
-				case 0:
+//					break;
+//				case 1:
+					spd.m_spd_balance = (int32_t)limit(balanceControl(&angle),maxPwmDuty);
+//					break;
+//				case 4:
 					motorControl(&spd);
-					//twinkleLed(PTB,0);
-					break;
-				default:
-					break;
+//					break;
+//				default:
+//					break;
 			}
-		}*/
-	}
+		}
+//	}
 }

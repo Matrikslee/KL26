@@ -4,10 +4,6 @@
 
 #include "stdint.h"
 
-#define SPD_LMT 200
-#define MAX_SPD (6000-SPD_LMT)
-#define MIN_SPD (0+SPD_LMT)
-
 typedef struct {
 	float m_angle;
 	float m_rate;
@@ -28,7 +24,7 @@ typedef struct {
 void getBalanceData(balanceDataTypeDef* data);
 
 //平衡环占空比
-int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle);
+int32_t balanceControl(angleTypeDef* angle);
 
 // 卡尔曼滤波函数
 void kalmanFilter(const balanceDataTypeDef* data, angleTypeDef* outAngle);

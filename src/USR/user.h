@@ -10,7 +10,7 @@ typedef struct{
   uint16_t Pin;
 } gpioPinTypeDef;
 
-void PWM_userInit(const uint8_t* pwmArray, uint8_t len);
+void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty);
 
 //ADC³õÊ¼»¯º¯Êý
 void ADC_userInit(void);

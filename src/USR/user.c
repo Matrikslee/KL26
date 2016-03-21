@@ -92,7 +92,7 @@ void PIT_userInit(void){
 	PIT_Init(&pit_initer);
 }
 
-void PWM_userInit(const uint8_t* pwmArray, uint8_t len){
+void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty){
 	int i;
 	for ( i = 0; i < len; ++i){
 		PWMInit(pwmArray[i],DIV1,6000);

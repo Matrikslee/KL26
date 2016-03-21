@@ -2,7 +2,12 @@
 #include "user.h"
 #include "TPM.h"
 #include "include.h"
-
+#include "led.h"
+static int32_t deadVoltage_L = 0;
+static int32_t deadVoltage_R = 0;
+static int32_t motorLeft, motorRight;
+uint16_t tmp_accz, tmp_gyro;
+float tmp;
 //倾角值表，注意：以加速度计竖直状态时为0度
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
@@ -26,34 +31,90 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO  0x980 //平衡陀螺仪静止时的输出值
-#define ACCZ_ZERO  0x4F0 //加速度计竖直时的输出值
+#define GYRO_ZERO  1895 //平衡陀螺仪静止时的输出值
+#define ACCZ_ZERO  2080 //加速度计竖直时的输出值
+// Angle:after Kalman
+// Angle_dot:after Kalman
+// Accz_m:before Kalman
+// Gyro_m:before Kalman
 
 //采集平衡环所需数据
 void getBalanceData(balanceDataTypeDef* data){
-	float tmp;
-	uint16_t tmp_accz, tmp_gyro;
+
+
 	//采集并初步处理加速度计的值
 	tmp_accz = ADC_GetValue(2)>>4;
-	tmp = (tmp_accz-ACCZ_ZERO)*0.050708;
+	tmp = (tmp_accz-ACCZ_ZERO)*0.086;  //0.050708;//0.086
 	if(tmp>100) { tmp = 100; }
 	if(tmp<-100) { tmp = -100; }
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
+	if(data->m_accz > -2.75)
+		GPIO_SetBits(PTC,3);
+
+	else
+		GPIO_ResetBits(PTC,3);
 	//采集并初步处理陀螺仪的值
 	tmp_gyro = ADC_GetValue(5)>>4;
-	data->m_gyro = (GYRO_ZERO-tmp_gyro)*0.120248;
+	data->m_gyro = (tmp_gyro-GYRO_ZERO)*0.120248;	//0.120248
 }
 
 // 计算平衡环占空比
-int32_t balanceControl(const balanceDataTypeDef* data, angleTypeDef* angle) {
-	static const float balanceKp = 300;
+int32_t balanceControl(angleTypeDef* angle) {
+	static const float balanceKp = 380; //120
 	static const float balanceKd = 0;
-	static const float balancedAngle = 6.0;
+	static const float balancedAngle = -4.10;
 	return (int32_t)(balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate);
 }
 
 // 卡尔曼滤波函数
 void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
+	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
+	static float e;
+	static float qBias;
+	static float k0, k1;
+	static float t0, t1;
+	static float angleErr;
+ 	static float pCt0, pCt1;
+ 	static float pDot[4] ={0,0,0,0};
+ 	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
+ 
+ 	result->m_angle += (measureData->m_gyro-qBias)*dt;             
+
+ 	pDot[0] = qAngle - p[0][1] - p[1][0]; 
+ 	pDot[1] = -p[1][1];
+ 	pDot[2] = -p[1][1];
+ 	pDot[3] = qGyro;
+
+ 	p[0][0] += pDot[0] * dt;              
+ 	p[0][1] += pDot[1] * dt;
+ 	p[1][0] += pDot[2] * dt;
+ 	p[1][1] += pDot[3] * dt;
+
+ 	angleErr = measureData->m_accz - result->m_angle;
+ 	
+ 	pCt0 = p[0][0];
+ 	pCt1 = p[1][0];
+ 	
+ 	e = rAngle + pCt0;
+
+ 	k0 = pCt0 / e;                         
+ 	k1 = pCt1 / e;
+ 	
+ 	t0 = pCt0;
+ 	t1 = p[0][1];
+
+ 	p[0][0] -= k0 * t0;
+ 	p[0][1] -= k0 * t1;
+ 	p[1][0] -= k1 * t0;
+ 	p[1][1] -= k1 * t1;
+ 	
+ 	// ????	
+ 	result->m_angle	+= k0 * angleErr;
+	qBias+= k1 * angleErr;
+ 	result->m_rate = measureData->m_gyro-qBias;
+ }
+
+/*void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	static const float qAngle = 0.001f;
 	static const float qBias = 0.003f;
 	static const float rMeasure = 0.03f;
@@ -91,23 +152,56 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	P[0][1] -= K[0] * P[0][1];
 	P[1][0] -= K[1] * P[0][0];
 	P[1][1] -= K[1] * P[0][1];
-}
+}*/
 
-int32_t motorLeft, motorRight;
+
 
 //使用占空比控制电机
 void motorControl(const spdTypeDef* spd){
-	//const static uint32_t deathVotageLeft = 800;
-	//const static uint32_t deathVotageRight = 600;	
-	motorLeft = (uint32_t)(3000-spd->m_spd_balance);
-	motorRight = (uint32_t)(3000-spd->m_spd_balance);
+	
+	motorLeft = spd->m_spd_balance;
+	motorRight = spd->m_spd_balance;
+	if(motorLeft > 0){
+		GPIO_SetBits(PTB,0);
+}
+	else
+		GPIO_ResetBits(PTB,0);
 
-//	right += deathVotageRight * (right>0x8000?1:-1);
-//	left += deathVotageLeft * (left>0x8000?1:-1);
-
-	motorLeft>MAX_SPD?motorLeft = MAX_SPD:0;
-	motorLeft<MIN_SPD?motorLeft = MIN_SPD:0;
-	motorRight>MAX_SPD?motorRight = MAX_SPD:0;
-	motorRight<MIN_SPD?motorRight = MIN_SPD:0;
-
+	//if(motorLeft > 0 && motorLeft < 3000)
+	//{
+	//	motorLeft = motorLeft;
+	//}
+	
+	
+	if(motorLeft > 3000){
+		motorLeft = 3000;
+	}
+	if(motorRight > 3000){
+		motorRight = 3000;
+	}
+	if(motorLeft < -3000){
+		motorLeft = -3000;
+	}
+	if(motorRight < -3000){
+		motorRight = -3000;
+	}
+	
+	if(motorLeft > 0){
+		PWMOutput(pwmArray[1], 0);
+		PWMOutput(pwmArray[0], motorLeft+deadVoltage_L);
+		
+	} else {
+		PWMOutput(pwmArray[0], 0);
+		PWMOutput(pwmArray[1], -motorLeft+deadVoltage_L);
+	}
+	
+	if(motorRight > 0){
+		PWMOutput(pwmArray[3], 0);
+		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);
+		
+	} else {
+		PWMOutput(pwmArray[2], 0);
+		PWMOutput(pwmArray[3], -motorRight+deadVoltage_R);
+	}
+	
 }
