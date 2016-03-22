@@ -12,16 +12,16 @@
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
         <TargetCommonOption>
-          <Device>MKL25Z128xxx4</Device>
+          <Device>MKL26Z128xxx4</Device>
           <Vendor>Freescale</Vendor>
           <PackID>Keil.Kinetis_KLxx_DFP.1.0.1</PackID>
           <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IROM(0x00000000,0x20000) IRAM(0x20000000,0x3000) IRAM2(0x1FFFF000,0x1000) CPUTYPE("Cortex-M0+") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD1FFFF000 -FC4000 -FN1 -FF0MK_P128_48MHZ -FS00 -FL020000 -FP0($$Device:MKL25Z128xxx4$Flash\MK_P128_48MHZ.FLM))</FlashDriverDll>
-          <DeviceId>6533</DeviceId>
-          <RegisterFile>$$Device:MKL25Z128xxx4$Device\Include\MKL25Z4.h</RegisterFile>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD1FFFF000 -FC4000 -FN1 -FF0MK_P128_48MHZ -FS00 -FL020000 -FP0($$Device:MKL26Z128xxx4$Flash\MK_P128_48MHZ.FLM))</FlashDriverDll>
+          <DeviceId>6835</DeviceId>
+          <RegisterFile>$$Device:MKL26Z128xxx4$Device\Include\MKL26Z4.h</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -31,7 +31,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:MKL25Z128xxx4$SVD\MKL25Z4.svd</SFDFile>
+          <SFDFile>$$Device:MKL26Z128xxx4$SVD\MKL26Z4.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -46,14 +46,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\</OutputDirectory>
-          <OutputName>MKL</OutputName>
+          <OutputDirectory>.\Objects\</OutputDirectory>
+          <OutputName>newKL26</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
-          <CreateHexFile>1</CreateHexFile>
+          <CreateHexFile>0</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\</ListingPath>
+          <ListingPath>.\Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -147,7 +147,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>7</TargetSelection>
+          <TargetSelection>6</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -350,13 +350,13 @@
             <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
-            <OneElfS>0</OneElfS>
+            <OneElfS>1</OneElfS>
             <Strict>0</Strict>
             <EnumInt>0</EnumInt>
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>0</wLevel>
+            <wLevel>2</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>0</uC99>
@@ -365,7 +365,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\DEV;.\DRI;.\SYS</IncludePath>
+              <IncludePath>.\src\DEV;.\src\DRI;.\src\SYS;.\src\USR</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -393,7 +393,7 @@
             <RepFail>1</RepFail>
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
-            <DataAddressRange>0x1FFFF000</DataAddressRange>
+            <DataAddressRange>0x20000000</DataAddressRange>
             <pXoBase></pXoBase>
             <ScatterFile></ScatterFile>
             <IncludeLibs></IncludeLibs>
@@ -406,42 +406,32 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>SYS</GroupName>
-          <Files>
-            <File>
-              <FileName>system_MKL25Z4.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\SYS\system_MKL25Z4.c</FilePath>
-            </File>
-            <File>
-              <FileName>startup_MKL25Z4.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\SYS\startup_MKL25Z4.s</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>DEV</GroupName>
           <Files>
             <File>
               <FileName>accel.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DEV\accel.c</FilePath>
-            </File>
-            <File>
-              <FileName>led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DEV\led.c</FilePath>
+              <FilePath>.\src\DEV\accel.c</FilePath>
             </File>
             <File>
               <FileName>crc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DEV\crc.c</FilePath>
+              <FilePath>.\src\DEV\crc.c</FilePath>
             </File>
             <File>
               <FileName>isr.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DEV\isr.c</FilePath>
+              <FilePath>.\src\DEV\isr.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DEV\led.c</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DEV\pwm.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -451,52 +441,67 @@
             <File>
               <FileName>adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DRI\adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>dma.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\dma.c</FilePath>
-            </File>
-            <File>
-              <FileName>gpio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>pit.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\pit.c</FilePath>
-            </File>
-            <File>
-              <FileName>spi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\spi.c</FilePath>
-            </File>
-            <File>
-              <FileName>sys.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\sys.c</FilePath>
-            </File>
-            <File>
-              <FileName>uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\DRI\uart.c</FilePath>
+              <FilePath>.\src\DRI\adc.c</FilePath>
             </File>
             <File>
               <FileName>delay.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DRI\delay.c</FilePath>
+              <FilePath>.\src\DRI\delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\dma.c</FilePath>
+            </File>
+            <File>
+              <FileName>gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>pit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\pit.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\sys.c</FilePath>
             </File>
             <File>
               <FileName>TPM.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\DRI\TPM.c</FilePath>
+              <FilePath>.\src\DRI\TPM.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\DRI\uart.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SYS</GroupName>
+          <Files>
+            <File>
+              <FileName>system_MKL25Z4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\SYS\system_MKL25Z4.c</FilePath>
+            </File>
+            <File>
+              <FileName>startup_MKL25Z4.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\src\SYS\startup_MKL25Z4.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -504,19 +509,19 @@
           <GroupName>USR</GroupName>
           <Files>
             <File>
-              <FileName>user.c</FileName>
+              <FileName>app.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USR\user.c</FilePath>
+              <FilePath>.\src\USR\app.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USR\main.c</FilePath>
+              <FilePath>.\src\USR\main.c</FilePath>
             </File>
             <File>
-              <FileName>app.c</FileName>
+              <FileName>user.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USR\app.c</FilePath>
+              <FilePath>.\src\USR\user.c</FilePath>
             </File>
           </Files>
         </Group>

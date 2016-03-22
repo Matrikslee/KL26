@@ -15,3 +15,5 @@
 *.lst
 *.uvguix*
 *.iex
+Objects/
+Listings/
