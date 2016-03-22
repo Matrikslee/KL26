@@ -6,6 +6,7 @@
 #include "pit.h"
 #include "sys.h"
 #include "TPM.h"
+#include "dma.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
 {
@@ -92,9 +93,17 @@ void PIT_userInit(void){
 	PIT_Init(&pit_initer);
 }
 
+//DMA³õÊ¼»¯º¯Êý
+void DMA_userInit(void){
+	DMA_InitTypeDef dma_initer;
+	dma_initer.Channelx = 0;
+	DMA_Init(&dma_initer);
+	
+}
+
 void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty){
 	int i;
 	for ( i = 0; i < len; ++i){
-		PWMInit(pwmArray[i],DIV1,6000);
+		PWMInit(pwmArray[i],DIV1,maxPwmDuty);
 	}
 }

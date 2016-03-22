@@ -28,4 +28,6 @@ uint32_t ADC_GetValue(uint8_t chl);
 void GPIO_userInit(void);
 //PIT初始化函数
 void PIT_userInit(void);
+//DMA初始化函数
+void DMA_userInit(void);
 #endif

@@ -8,7 +8,7 @@ static int32_t deadVoltage_R = 0;
 static int32_t motorLeft, motorRight;
 uint16_t tmp_accz, tmp_gyro;
 float tmp;
-//倾角值表，注意：以加速度计竖直状态时为0度
+//vertical accz angle =0
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
 -64.158067,-62.873247,-61.642363,-60.458639,-59.316583,-58.211669,-57.140120,-56.098738,-55.084794,-54.095931,
@@ -31,42 +31,55 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO  1895 //平衡陀螺仪静止时的输出值
-#define ACCZ_ZERO  2080 //加速度计竖直时的输出值
-// Angle:after Kalman
-// Angle_dot:after Kalman
-// Accz_m:before Kalman
-// Gyro_m:before Kalman
+#define GYRO_ZERO  1895 //static_gyro output
+#define ACCZ_ZERO  2080 //vertical_accz output
 
-//采集平衡环所需数据
+//get balance data
 void getBalanceData(balanceDataTypeDef* data){
-
-
-	//采集并初步处理加速度计的值
+	//get the value of the accz and process
 	tmp_accz = ADC_GetValue(2)>>4;
 	tmp = (tmp_accz-ACCZ_ZERO)*0.086;  //0.050708;//0.086
 	if(tmp>100) { tmp = 100; }
-	if(tmp<-100) { tmp = -100; }
+	if(tmp<-100) { tmp = -100; }       //set the angle limit
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
 	if(data->m_accz > -2.75)
 		GPIO_SetBits(PTC,3);
-
 	else
 		GPIO_ResetBits(PTC,3);
-	//采集并初步处理陀螺仪的值
+	//get the value of the gyro and process
 	tmp_gyro = ADC_GetValue(5)>>4;
-	data->m_gyro = (tmp_gyro-GYRO_ZERO)*0.120248;	//0.120248
+	data->m_gyro = (tmp_gyro-GYRO_ZERO)*0.120248;	//0.120248  //need to debug to config the value(after kalman the value = 0)
 }
 
-// 计算平衡环占空比
-int32_t balanceControl(angleTypeDef* angle) {
-	static const float balanceKp = 380; //120
+const unsigned char directionChannel[] = {7,9,8,6};
+
+void getDirectionData(directionDataTypeDef* data){
+	int i, ll ,rr;
+	for (i = 0; i < 4; ++i){
+		data->m_value[i] = ADC_GetValue(directionChannel[i])>>8;
+	}
+	ll = data->m_value[0];
+	rr = data->m_value[3];
+	data->m_dir_flag = (ll-rr)*1./(ll+rr);
+}
+
+//calculate the sqd data
+void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output) {
+	static const float balanceKp = 380; 
 	static const float balanceKd = 0;
 	static const float balancedAngle = -4.10;
-	return (int32_t)(balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate);
+	int32_t result = balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate;
+	output->leftDuty += result;
+	output->rightDuty += result;
 }
 
-// 卡尔曼滤波函数
+void directionCtrl(directionDataTypeDef* data, dutyTypeDef* output){
+	const float ratio = 300;
+	output->leftDuty += ratio*data->m_dir_flag;
+	output->rightDuty -= ratio*data->m_dir_flag;
+}
+
+//kalman fliter
 void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
 	static float e;
@@ -107,8 +120,7 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
  	p[0][1] -= k0 * t1;
  	p[1][0] -= k1 * t0;
  	p[1][1] -= k1 * t1;
- 	
- 	// ????	
+ 		
  	result->m_angle	+= k0 * angleErr;
 	qBias+= k1 * angleErr;
  	result->m_rate = measureData->m_gyro-qBias;
@@ -156,22 +168,15 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 
 
 
-//使用占空比控制电机
-void motorControl(const spdTypeDef* spd){
+//control the motor by using the SPD data
+void motorControl(const dutyTypeDef* output){
 	
-	motorLeft = spd->m_spd_balance;
-	motorRight = spd->m_spd_balance;
+	motorLeft = output->leftDuty;
+	motorRight = output->rightDuty;
+	
 	if(motorLeft > 0){
 		GPIO_SetBits(PTB,0);
-}
-	else
-		GPIO_ResetBits(PTB,0);
-
-	//if(motorLeft > 0 && motorLeft < 3000)
-	//{
-	//	motorLeft = motorLeft;
-	//}
-	
+	}	else GPIO_ResetBits(PTB,0);	
 	
 	if(motorLeft > 3000){
 		motorLeft = 3000;
@@ -189,7 +194,6 @@ void motorControl(const spdTypeDef* spd){
 	if(motorLeft > 0){
 		PWMOutput(pwmArray[1], 0);
 		PWMOutput(pwmArray[0], motorLeft+deadVoltage_L);
-		
 	} else {
 		PWMOutput(pwmArray[0], 0);
 		PWMOutput(pwmArray[1], -motorLeft+deadVoltage_L);
@@ -197,11 +201,10 @@ void motorControl(const spdTypeDef* spd){
 	
 	if(motorRight > 0){
 		PWMOutput(pwmArray[3], 0);
-		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);
-		
+		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);		
 	} else {
 		PWMOutput(pwmArray[2], 0);
 		PWMOutput(pwmArray[3], -motorRight+deadVoltage_R);
-	}
+	} 
 	
 }

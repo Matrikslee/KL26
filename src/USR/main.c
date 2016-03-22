@@ -17,9 +17,11 @@
 #include "app.h"
 #include "include.h"
 
-spdTypeDef spd;
+dutyTypeDef output;
 angleTypeDef angle;
 balanceDataTypeDef tmp_balance;
+directionDataTypeDef tmp_direction;
+
 uint8_t cnt = 0;
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
@@ -47,26 +49,19 @@ int main(void){
 	GPIO_userInit();
 	PIT_userInit();
 
-	while(1){
-		
-		//getBalanceData(&tmp_balance);
-		
+	while(1){		
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
-//			switch(++cnt%5){
-//				case 0:
-					getBalanceData(&tmp_balance);
-					kalmanFilter(&tmp_balance, &angle);
-//					break;
-//				case 1:
-					spd.m_spd_balance = (int32_t)limit(balanceControl(&angle),maxPwmDuty);
-//					break;
-//				case 4:
-					motorControl(&spd);
-//					break;
-//				default:
-//					break;
+			output.leftDuty = output.rightDuty = 0;
+			// balance handler
+			getBalanceData(&tmp_balance);
+			kalmanFilter(&tmp_balance, &angle);
+			balanceCtrl(&angle, &output);
+			// direction handler
+			getDirectionData(&tmp_direction);
+			directionCtrl(&tmp_direction, &output);
+			//spd.m_spd_direction = (int32_t) limit(directionControl(), maxPwmDuty);
+			motorControl(&output);
 			}
 		}
-//	}
 }
