@@ -12,7 +12,7 @@ typedef struct{
 
 void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty);
 
-//ADC初始化函数
+//ADC init function
 void ADC_userInit(void);
 uint32_t ADC_GetValue(uint8_t chl);
 //======================================================================
@@ -24,10 +24,10 @@ uint32_t ADC_GetValue(uint8_t chl);
 //返回：信号值
 //======================================================================
 
-//GPIO初始化函数
+//GPIO init function
 void GPIO_userInit(void);
-//PIT初始化函数
+//PIT init function
 void PIT_userInit(void);
-//DMA初始化函数
+//DMA init function
 void DMA_userInit(void);
 #endif

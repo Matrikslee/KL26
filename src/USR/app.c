@@ -3,6 +3,7 @@
 #include "TPM.h"
 #include "include.h"
 #include "led.h"
+#include "counter.h"
 static int32_t deadVoltage_L = 0;
 static int32_t deadVoltage_R = 0;
 static int32_t motorLeft, motorRight;
