@@ -20,6 +20,12 @@ typedef struct {
 } balanceDataTypeDef;
 
 typedef struct {
+	float m_Left;
+	float m_Right;
+} speedDataTypeDef;
+
+
+typedef struct {
 	uint32_t m_value[4];
 	int32_t m_dir_flag;
 } directionDataTypeDef;

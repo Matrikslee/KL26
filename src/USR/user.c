@@ -6,6 +6,7 @@
 #include "pit.h"
 #include "sys.h"
 #include "TPM.h"
+#include "counter.h"
 #include "dma.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =

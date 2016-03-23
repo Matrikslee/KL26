@@ -1439,7 +1439,7 @@ typedef struct {
   __IO uint32_t CSR;                               /**< Low Power Timer Control Status Register, offset: 0x0 */
   __IO uint32_t PSR;                               /**< Low Power Timer Prescale Register, offset: 0x4 */
   __IO uint32_t CMR;                               /**< Low Power Timer Compare Register, offset: 0x8 */
-  __I  uint32_t CNR;                               /**< Low Power Timer Counter Register, offset: 0xC */
+  __IO uint32_t CNR;                               /**< Low Power Timer Counter Register, offset: 0xC */
 } LPTMR_Type;
 
 /* ----------------------------------------------------------------------------

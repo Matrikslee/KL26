@@ -3,6 +3,7 @@
 #include "TPM.h"
 #include "include.h"
 #include "led.h"
+#include "counter.h"
 static int32_t deadVoltage_L = 200;
 static int32_t deadVoltage_R = 0;
 static int32_t motorLeft, motorRight;
@@ -165,10 +166,15 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	P[1][0] -= K[1] * P[0][0];
 	P[1][1] -= K[1] * P[0][1];
 }*/
+//get speed data
+void getSpeedData(speedDataTypeDef* data){
+	data->m_Left = Counter0_Read();
+	Counter0_Clear();
+	data->m_Right = Counter1_Read();
+	Counter1_Clear();
+}
 
-
-
-//control the motor by using the SPD data
+//control the motors by using the SPD data
 void motorControl(const dutyTypeDef* output){
 	
 	motorLeft = output->leftDuty;
