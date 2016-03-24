@@ -1,4 +1,4 @@
-#include "MKL25Z4.H"
+#include "MKL25Z4.h"
 #include "ctype.h"
 
 void Counter0_Init(void)
@@ -6,7 +6,7 @@ void Counter0_Init(void)
 	/*First configure the pin of the module will be use*/
 	SIM->SCGC5 |=(uint32_t)(0x1UL<<11);			//open the clock of the PTC
 	PORTC->PCR[5] &=~(uint32_t)(0x7UL<<8);
-	PORTC->PCR[5] |=(uint32_t)(0x3UL<<8);	//PTC5 for ALT3(LPTMR_ALT2)
+	PORTC->PCR[5] |=(uint32_t)(0x3UL<<8);	//PTC12 for ALT3(LPTMR_ALT2)
 
 	/*Configure the module*/
 	SIM->SCGC5 |=(uint32_t)(0x1UL<<0);			//open the clock of the LPTMR0

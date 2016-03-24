@@ -20,6 +20,12 @@ typedef struct {
 } balanceDataTypeDef;
 
 typedef struct {
+	float m_Left;
+	float m_Right;
+} speedDataTypeDef;
+
+
+typedef struct {
 	uint32_t m_value[4];
 	int32_t m_dir_flag;
 } directionDataTypeDef;
@@ -28,7 +34,9 @@ typedef struct {
 void getBalanceData(balanceDataTypeDef* data);
 
 void getDirectionData(directionDataTypeDef* data);
-
+//采集编码器数据
+void getSpeedData(speedDataTypeDef* data);
+	
 //计算平衡环占空比
 void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output);
 

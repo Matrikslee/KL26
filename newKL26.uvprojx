@@ -493,11 +493,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\DRI\counter.c</FilePath>
             </File>
-            <File>
-              <FileName>timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DRI\timer.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

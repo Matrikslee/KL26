@@ -4,7 +4,7 @@
 #include "include.h"
 #include "led.h"
 #include "counter.h"
-static int32_t deadVoltage_L = 0;
+static int32_t deadVoltage_L = 600;
 static int32_t deadVoltage_R = 0;
 static int32_t motorLeft, motorRight;
 uint16_t tmp_accz, tmp_gyro;
@@ -66,9 +66,9 @@ void getDirectionData(directionDataTypeDef* data){
 
 //calculate the sqd data
 void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output) {
-	static const float balanceKp = 380; 
-	static const float balanceKd = 0;
-	static const float balancedAngle = -4.10;
+	static const float balanceKp = 1000; 
+	static const float balanceKd = 15;
+	static const float balancedAngle = -4.00;
 	int32_t result = balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate;
 	output->leftDuty += result;
 	output->rightDuty += result;
@@ -76,8 +76,8 @@ void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output) {
 
 void directionCtrl(directionDataTypeDef* data, dutyTypeDef* output){
 	const float ratio = 300;
-	output->leftDuty += ratio*data->m_dir_flag;
-	output->rightDuty -= ratio*data->m_dir_flag;
+	output->leftDuty -= ratio*data->m_dir_flag;
+	output->rightDuty += ratio*data->m_dir_flag;
 }
 
 //kalman fliter
@@ -166,46 +166,38 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	P[1][0] -= K[1] * P[0][0];
 	P[1][1] -= K[1] * P[0][1];
 }*/
+//get speed data
+void getSpeedData(speedDataTypeDef* data){
+	data->m_Left = Counter0_Read();
+	Counter0_Clear();
+	data->m_Right = Counter1_Read();
+	Counter1_Clear();
+}
 
-
-
-//control the motor by using the SPD data
+//control the motors by using the SPD data
 void motorControl(const dutyTypeDef* output){
 	
-	motorLeft = output->leftDuty;
-	motorRight = output->rightDuty;
+	motorLeft = limit(output->leftDuty, maxPwmDuty);
+	motorRight = limit(output->rightDuty, maxPwmDuty);
 	
 	if(motorLeft > 0){
 		GPIO_SetBits(PTB,0);
-	}	else GPIO_ResetBits(PTB,0);	
-	
-	if(motorLeft > 3000){
-		motorLeft = 3000;
-	}
-	if(motorRight > 3000){
-		motorRight = 3000;
-	}
-	if(motorLeft < -3000){
-		motorLeft = -3000;
-	}
-	if(motorRight < -3000){
-		motorRight = -3000;
-	}
+	}	else GPIO_ResetBits(PTB,0);
 	
 	if(motorLeft > 0){
 		PWMOutput(pwmArray[1], 0);
-		PWMOutput(pwmArray[0], motorLeft+deadVoltage_L);
+		PWMOutput(pwmArray[0], deadVoltage_L+motorLeft);
 	} else {
 		PWMOutput(pwmArray[0], 0);
-		PWMOutput(pwmArray[1], -motorLeft+deadVoltage_L);
+		PWMOutput(pwmArray[1], deadVoltage_L-motorLeft);
 	}
 	
 	if(motorRight > 0){
 		PWMOutput(pwmArray[3], 0);
-		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);		
+		PWMOutput(pwmArray[2], deadVoltage_R+motorRight);	
 	} else {
 		PWMOutput(pwmArray[2], 0);
-		PWMOutput(pwmArray[3], -motorRight+deadVoltage_R);
+		PWMOutput(pwmArray[3], deadVoltage_R-motorRight);
 	} 
 	
 }

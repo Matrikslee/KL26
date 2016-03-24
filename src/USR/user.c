@@ -6,6 +6,7 @@
 #include "pit.h"
 #include "sys.h"
 #include "TPM.h"
+#include "counter.h"
 #include "dma.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
@@ -56,7 +57,7 @@ uint32_t ADC_GetValue(uint8_t index){
 	return ADC_GetConversionValue(ADC_CalxMap(adc_channel_index[index]));
 }
 
-//ADC init function
+//ADC初始化函数
 void ADC_userInit(void){
 	ADC_InitTypeDef adc_initer;
 	uint8_t i = 0;
@@ -71,7 +72,7 @@ void ADC_userInit(void){
 const uint32_t gpio_pin_length = 3;
 const gpioPinTypeDef gpio_pin[gpio_pin_length] = {{PTB, 9}, {PTB,10}, {PTE,3}};
 
-//GPIO init function
+//GPIO初始化函数
 void GPIO_userInit(void){
 	GPIO_InitTypeDef gpio_initer;
 	uint8_t i = 0;
@@ -85,15 +86,15 @@ void GPIO_userInit(void){
 	}
 }
 
-//PIT init function
+//PIT初始化函数
 void PIT_userInit(void){
 	PIT_InitTypeDef pit_initer;
 	pit_initer.PITx = PIT0;
-	pit_initer.PIT_Interval = 1; //MS
+	pit_initer.PIT_Interval = 1; //单位MS
 	PIT_Init(&pit_initer);
 }
 
-//DMA init function
+//DMA初始化函数
 void DMA_userInit(void){
 	DMA_InitTypeDef dma_initer;
 	dma_initer.Channelx = 0;

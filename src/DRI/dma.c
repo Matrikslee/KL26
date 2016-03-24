@@ -64,6 +64,7 @@ uint8_t DMA_IsComplete(uint8_t DMAChl)
   }
 }
 
+
 //DMA IT 配置
 void DMA_ITConfig(uint16_t DMA_IT, uint8_t DMA_CH, FunctionalState NewState)
 {
@@ -79,5 +80,8 @@ void DMA_ITConfig(uint16_t DMA_IT, uint8_t DMA_CH, FunctionalState NewState)
 //DMA 清楚中断标志位
 void DMA_ClearITPendingBit(uint16_t DMA_IT, uint8_t DMA_CH)
 {
-  DMA0->DMA[DMA_CH].DSR_BCR |= DMA_DSR_BCR_DONE_MASK;  
+  DMA0->DMA[DMA_CH].DSR_BCR |= DMA_DSR_BCR_DONE_MASK;
+
+  
 }
+
