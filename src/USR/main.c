@@ -1,3 +1,4 @@
+
 #include "gpio.h"
 #include "uart.h"
 #include "delay.h"
@@ -45,16 +46,14 @@ int main(void){
 	ledInit(PTC,3);
 
   DisableInterrupts();
-	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);                                                                                                                                                                                                                              	  
+	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
 	//±àÂëÆ÷³õÊ¼»¯£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡
 	Counter0_Init();
 	Counter1_Init();
-	
-	
-	while(1){		
+	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
 			output.leftDuty = output.rightDuty = 0;
@@ -67,9 +66,8 @@ int main(void){
 			// direction handler
 			//getDirectionData(&tmp_direction);
 			//directionCtrl(&tmp_direction, &output);
-			
 			//spd.m_spd_direction = (int32_t) limit(directionControl(), maxPwmDuty);
-			motorControl(&output);
+			motorCtrl(&output);
 			}
 		}
 }

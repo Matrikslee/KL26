@@ -3,7 +3,7 @@
 #define __APP_H__
 
 #include "stdint.h"
-
+#include "include.h"
 typedef struct {
 	float m_angle;
 	float m_rate;
@@ -41,12 +41,10 @@ void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output);
 //计算方向环占空比
 void directionCtrl(directionDataTypeDef* data, dutyTypeDef* output);
 
+//使用占空比控制电机
+void motorCtrl(const dutyTypeDef* output);
+
 // 卡尔曼滤波函数
 void kalmanFilter(const balanceDataTypeDef* data, angleTypeDef* outAngle);
-
-//使用占空比控制电机
-void motorControl(const dutyTypeDef* output);
-
-int limit(int x, int lmt);
 
 #endif

@@ -64,9 +64,17 @@ void getDirectionData(directionDataTypeDef* data){
 	data->m_dir_flag = (ll-rr)*1./(ll+rr);
 }
 
+//get speed data
+void getSpeedData(speedDataTypeDef* data){
+	data->m_Left = Counter0_Read();
+	Counter0_Clear();
+	data->m_Right = Counter1_Read();
+	Counter1_Clear();
+}
+
 //calculate the sqd data
 void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output) {
-	static const float balanceKp = 1000; 
+	static const float balanceKp = 1000;
 	static const float balanceKd = 12;
 	static const float balancedAngle = -9.0;
 	int32_t result = balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate;
@@ -80,6 +88,31 @@ void directionCtrl(directionDataTypeDef* data, dutyTypeDef* output){
 	output->rightDuty += ratio*data->m_dir_flag;
 }
 
+//control the motors by using the SPD data
+void motorCtrl(const dutyTypeDef* output){
+	motorLeft = output->leftDuty;
+	motorRight = output->rightDuty;
+	if(motorLeft > 0){
+		GPIO_SetBits(PTB,0);
+	}	else GPIO_ResetBits(PTB,0);
+	motorLeft = limit(motorLeft, maxPwmDuty);
+	motorRight = limit(motorRight, maxPwmDuty);
+	if(motorLeft > 0){
+		PWMOutput(pwmArray[1], 0);
+		PWMOutput(pwmArray[0], motorLeft+deadVoltage_L);
+	} else {
+		PWMOutput(pwmArray[0], 0);
+		PWMOutput(pwmArray[1], -motorLeft+deadVoltage_L);
+	}
+	if(motorRight > 0){
+		PWMOutput(pwmArray[3], 0);
+		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);
+	} else {
+		PWMOutput(pwmArray[2], 0);
+		PWMOutput(pwmArray[3], -motorRight+deadVoltage_R);
+	}
+}
+
 //kalman fliter
 void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
@@ -91,29 +124,27 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
  	static float pCt0, pCt1;
  	static float pDot[4] ={0,0,0,0};
  	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
- 
- 	result->m_angle += (measureData->m_gyro-qBias)*dt;             
-
- 	pDot[0] = qAngle - p[0][1] - p[1][0]; 
+ 	result->m_angle += (measureData->m_gyro-qBias)*dt;
+ 	pDot[0] = qAngle - p[0][1] - p[1][0];
  	pDot[1] = -p[1][1];
  	pDot[2] = -p[1][1];
  	pDot[3] = qGyro;
 
- 	p[0][0] += pDot[0] * dt;              
+ 	p[0][0] += pDot[0] * dt;
  	p[0][1] += pDot[1] * dt;
  	p[1][0] += pDot[2] * dt;
  	p[1][1] += pDot[3] * dt;
 
  	angleErr = measureData->m_accz - result->m_angle;
- 	
+
  	pCt0 = p[0][0];
  	pCt1 = p[1][0];
- 	
+
  	e = rAngle + pCt0;
 
- 	k0 = pCt0 / e;                         
+ 	k0 = pCt0 / e;
  	k1 = pCt1 / e;
- 	
+
  	t0 = pCt0;
  	t1 = p[0][1];
 
@@ -121,7 +152,7 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
  	p[0][1] -= k0 * t1;
  	p[1][0] -= k1 * t0;
  	p[1][1] -= k1 * t1;
- 		
+
  	result->m_angle	+= k0 * angleErr;
 	qBias+= k1 * angleErr;
  	result->m_rate = measureData->m_gyro-qBias;
@@ -133,7 +164,7 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	static const float rMeasure = 0.03f;
 	static const float dt = 0.005f;
 	static float P[2][2] = {{0, 0}, {0, 0}};
-	static float bias = 0.0f;
+2	static float bias = 0.0f;
 	static float S, K[2], angleErr;
 
 	// Step 1 Update xhat
@@ -166,41 +197,3 @@ void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
 	P[1][0] -= K[1] * P[0][0];
 	P[1][1] -= K[1] * P[0][1];
 }*/
-//get speed data
-void getSpeedData(speedDataTypeDef* data){
-	data->m_Left = Counter0_Read();
-	Counter0_Clear();
-	data->m_Right = Counter1_Read();
-	Counter1_Clear();
-}
-
-//control the motors by using the SPD data
-void motorControl(const dutyTypeDef* output){
-	
-	motorLeft = output->leftDuty;
-	motorRight = output->rightDuty;
-	
-	if(motorLeft > 0){
-		GPIO_SetBits(PTB,0);
-	}	else GPIO_ResetBits(PTB,0);
-	
-	motorLeft = limit(motorLeft, maxPwmDuty);
-	motorRight = limit(motorRight, maxPwmDuty);
-	
-	if(motorLeft > 0){
-		PWMOutput(pwmArray[1], 0);
-		PWMOutput(pwmArray[0], motorLeft+deadVoltage_L);
-	} else {
-		PWMOutput(pwmArray[0], 0);
-		PWMOutput(pwmArray[1], -motorLeft+deadVoltage_L);
-	}
-	
-	if(motorRight > 0){
-		PWMOutput(pwmArray[3], 0);
-		PWMOutput(pwmArray[2], motorRight+deadVoltage_R);		
-	} else {
-		PWMOutput(pwmArray[2], 0);
-		PWMOutput(pwmArray[3], -motorRight+deadVoltage_R);
-	} 
-	
-}
