@@ -1,4 +1,3 @@
-
 #include "gpio.h"
 #include "uart.h"
 #include "delay.h"
@@ -23,12 +22,11 @@ dutyTypeDef output;
 angleTypeDef angle;
 balanceDataTypeDef tmp_balance;
 directionDataTypeDef tmp_direction;
-speedDataTypeDef speed;
-uint8_t cnt = 0;
+speedTypeDef speed;
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
 const uint32_t maxPwmDuty = 6000;
-
+uint8_t cnt = 0;
 int limit(int x, int lmt) {
 	if(x>lmt) return lmt;
 	if(x<-lmt) return -lmt;
@@ -46,16 +44,20 @@ int main(void){
 	ledInit(PTC,3);
 
   DisableInterrupts();
-	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);
+	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);                                                                                                                                                                                                                              	  
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
 	//±àÂëÆ÷³õÊ¼»¯£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡
 	Counter0_Init();
 	Counter1_Init();
-	while(1){
+	
+	while(1){		
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
+			cnt = 0;
+			cnt++;
+			if(cnt == 99) cnt = 0;
 			output.leftDuty = output.rightDuty = 0;
 			// balance handler
 			getBalanceData(&tmp_balance);
@@ -63,11 +65,13 @@ int main(void){
 			balanceCtrl(&angle, &output);
 			// speed handler
 			getSpeedData(&speed);
+			speedCtrl(&speed,&output);
 			// direction handler
 			//getDirectionData(&tmp_direction);
 			//directionCtrl(&tmp_direction, &output);
+			
 			//spd.m_spd_direction = (int32_t) limit(directionControl(), maxPwmDuty);
-			motorCtrl(&output);
+			motorControl(&output);
 			}
 		}
 }

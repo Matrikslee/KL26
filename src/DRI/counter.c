@@ -1,4 +1,4 @@
-#include "MKL25Z4.H"
+#include "MKL25Z4.h"
 #include "ctype.h"
 
 void Counter0_Init(void)

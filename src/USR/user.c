@@ -79,8 +79,8 @@ void GPIO_userInit(void){
 	for (i = 0; i < gpio_pin_length; ++i){
 		gpio_initer.GPIO_Pin = gpio_pin[i].Pin;
 		gpio_initer.GPIO_InitState = Bit_RESET;
-		gpio_initer.GPIO_IRQMode = GPIO_IT_RISING;
-		gpio_initer.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+		gpio_initer.GPIO_IRQMode = GPIO_IT_DISABLE;
+		gpio_initer.GPIO_Mode = GPIO_Mode_IPU;
 		gpio_initer.GPIOx = gpio_pin[i].GPIO;
 		GPIO_Init(&gpio_initer);
 	}
