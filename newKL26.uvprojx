@@ -406,36 +406,6 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>DEV</GroupName>
-          <Files>
-            <File>
-              <FileName>accel.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DEV\accel.c</FilePath>
-            </File>
-            <File>
-              <FileName>crc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DEV\crc.c</FilePath>
-            </File>
-            <File>
-              <FileName>isr.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DEV\isr.c</FilePath>
-            </File>
-            <File>
-              <FileName>led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DEV\led.c</FilePath>
-            </File>
-            <File>
-              <FileName>pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DEV\pwm.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>DRI</GroupName>
           <Files>
             <File>

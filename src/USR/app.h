@@ -26,18 +26,15 @@ typedef struct {
 } speedDataTypeDef;
 
 //计算平衡环占空比
-void balanceCtrl(dutyTypeDef* output);
+int32_t balanceCtrl(void);
 
 //计算速度环占空比
-void speedCtrl(dutyTypeDef* output);
+int32_t speedCtrl(void);
 
 //计算方向环占空比
-void directionCtrl(dutyTypeDef* output);
-
-// 卡尔曼滤波函数
-void kalmanFilter(const balanceDataTypeDef* data, angleTypeDef* outAngle);
+int32_t directionCtrl(void);
 
 //使用占空比控制电机
-void motorControl(const dutyTypeDef* output);
+void motorControl(int32_t, int32_t, int32_t);
 
 #endif

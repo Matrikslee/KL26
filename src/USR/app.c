@@ -2,14 +2,58 @@
 #include "user.h"
 #include "TPM.h"
 #include "include.h"
-#include "led.h"
 #include "counter.h"
 #include "tools.h"
 
 static int32_t deadVoltage_L = 50;
 static int32_t deadVoltage_R = 0;
-static int32_t motorLeft, motorRight;
 static float speed_now = 0;
+
+//kalman fliter
+void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
+	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
+	static float e;
+	static float qBias;
+	static float k0, k1;
+	static float t0, t1;
+	static float angleErr;
+ 	static float pCt0, pCt1;
+ 	static float pDot[4] ={0,0,0,0};
+ 	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
+
+ 	result->m_angle += (measureData->m_gyro-qBias)*dt;
+
+ 	pDot[0] = qAngle - p[0][1] - p[1][0];
+ 	pDot[1] = -p[1][1];
+ 	pDot[2] = -p[1][1];
+ 	pDot[3] = qGyro;
+
+ 	p[0][0] += pDot[0] * dt;
+ 	p[0][1] += pDot[1] * dt;
+ 	p[1][0] += pDot[2] * dt;
+ 	p[1][1] += pDot[3] * dt;
+
+ 	angleErr = measureData->m_accz - result->m_angle;
+
+ 	pCt0 = p[0][0];
+ 	pCt1 = p[1][0];
+ 	e = rAngle + pCt0;
+
+ 	k0 = pCt0 / e;
+ 	k1 = pCt1 / e;
+
+ 	t0 = pCt0;
+ 	t1 = p[0][1];
+
+ 	p[0][0] -= k0 * t0;
+ 	p[0][1] -= k0 * t1;
+ 	p[1][0] -= k1 * t0;
+ 	p[1][1] -= k1 * t1;
+
+ 	result->m_angle	+= k0 * angleErr;
+	qBias+= k1 * angleErr;
+ 	result->m_rate = measureData->m_gyro-qBias;
+ }
 
 //vertical accz angle =0
 const float  Asin_to_Angle[] = {
@@ -113,32 +157,33 @@ float getDirectionData(){
 	err = left - right;
 	sum = left + right + 1; // sum > 0
 	
-	return 100*err/sum;
+	return err/sum;
 }
 
-const float balancedAngle = -10.7;
+const float balancedAngle = -10.6;
 
 //calculate the balance data
-void balanceCtrl(dutyTypeDef* output) {
-	static const float balanceKp = 1100;
+int32_t balanceCtrl() {
+	static const float balanceKp = 1200;
 	static const float balanceKd = 0;
 	static angleTypeDef angle;
-	int32_t result;
+	static float result;
 	
 	balanceDataTypeDef measure;
 	getBalanceData(&measure);
 	kalmanFilter(&measure, &angle);
 	result = balanceKp*(angle.m_angle - balancedAngle)+balanceKd*angle.m_rate;
-	output->leftDuty += result;
-	output->rightDuty += result;
+	
+	return (int32_t)result;
+	
 }
 
 float speedCalc(){
-	static const float SPEED_TO_DUTY = 12.034;
-	static const float maxSpeed_I = 10;
-	static const float speedCtrlKp = 1.5;
+	static const float SPEED_TO_DUTY = 11.034;
+	static const float maxSpeed_I = 20;
+	static const float speedCtrlKp = 2;
 	static const float speedCtrlKi = 0.5;
-	static const float setSpeed = 80;
+	static const float setSpeed = 150;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
 	
@@ -151,7 +196,7 @@ float speedCalc(){
 }
 
 //calculate the speed data
-void speedCtrl(dutyTypeDef* output) {
+int32_t speedCtrl() {
 	static const uint8_t maxSpeed_period = 60;
 	static uint8_t speed_period = 0;
 	static float cur_speed = 0, pre_speed = 0, err_speed, result;
@@ -166,8 +211,7 @@ void speedCtrl(dutyTypeDef* output) {
 	
 	result = err_speed*(speed_period*1./maxSpeed_period) + pre_speed;
 	
-	output->leftDuty += (int32_t) result;
-	output->rightDuty += (int32_t) result;
+	return (int32_t)result;
 }
 
 float getXGyro(){
@@ -179,7 +223,7 @@ float getXGyro(){
 float directionCalc(){
 	static const float gyro_K = 0;
 	static const float sensor_Kp = 2.0;
-	static const float sensor_Kd = 0;
+	static const float sensor_Kd = 0.5;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
@@ -195,71 +239,25 @@ float directionCalc(){
 	return sensor_p*sensor_Kp + sensor_d*sensor_Kd + gyro*gyro_K;
 }
 
-void directionCtrl(dutyTypeDef* output){
+int32_t directionCtrl(){
 	static float result;
 	
 	result = directionCalc();
 	
-	output->leftDuty -= (int32_t) result;
-	output->rightDuty += (int32_t) result;
+	if(fabs(result)<0.1) { result = 0; }
+	
+	return (int32_t) result*100;
 }
 
-//kalman fliter
-void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
-	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
-	static float e;
-	static float qBias;
-	static float k0, k1;
-	static float t0, t1;
-	static float angleErr;
- 	static float pCt0, pCt1;
- 	static float pDot[4] ={0,0,0,0};
- 	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
-
- 	result->m_angle += (measureData->m_gyro-qBias)*dt;
-
- 	pDot[0] = qAngle - p[0][1] - p[1][0];
- 	pDot[1] = -p[1][1];
- 	pDot[2] = -p[1][1];
- 	pDot[3] = qGyro;
-
- 	p[0][0] += pDot[0] * dt;
- 	p[0][1] += pDot[1] * dt;
- 	p[1][0] += pDot[2] * dt;
- 	p[1][1] += pDot[3] * dt;
-
- 	angleErr = measureData->m_accz - result->m_angle;
-
- 	pCt0 = p[0][0];
- 	pCt1 = p[1][0];
- 	e = rAngle + pCt0;
-
- 	k0 = pCt0 / e;
- 	k1 = pCt1 / e;
-
- 	t0 = pCt0;
- 	t1 = p[0][1];
-
- 	p[0][0] -= k0 * t0;
- 	p[0][1] -= k0 * t1;
- 	p[1][0] -= k1 * t0;
- 	p[1][1] -= k1 * t1;
-
- 	result->m_angle	+= k0 * angleErr;
-	qBias+= k1 * angleErr;
- 	result->m_rate = measureData->m_gyro-qBias;
- }
-
-
 //control the motors by using the SPD data
-void motorControl(const dutyTypeDef* output){
-	motorLeft = limit(output->leftDuty, maxPwmDuty);
-	motorRight = limit(output->rightDuty, maxPwmDuty);
-
-	if(motorRight != 0){
-		GPIO_SetBits(PTB,0);
-	}	else GPIO_ResetBits(PTB,0);
-
+void motorControl(int32_t balance, int32_t speed, int32_t turn){
+	static int32_t tmp, motorLeft, motorRight;
+	
+	tmp = limit(balance+speed,maxPwmDuty*5/6);
+	
+	motorLeft = limit(tmp - turn, maxPwmDuty);
+	motorRight = limit(tmp + turn, maxPwmDuty);
+	
 	if(motorLeft > 0){
 		PWMOutput(pwmArray[1], 0);
 		PWMOutput(pwmArray[0], deadVoltage_L+motorLeft);
