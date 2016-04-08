@@ -19,19 +19,12 @@
 #include "include.h"
 
 dutyTypeDef output;
-angleTypeDef angle;
-balanceDataTypeDef tmp_balance;
-directionDataTypeDef tmp_direction;
-speedTypeDef speed;
+
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
 const uint32_t maxPwmDuty = 6000;
-uint8_t cnt = 0;
-int limit(int x, int lmt) {
-	if(x>lmt) return lmt;
-	if(x<-lmt) return -lmt;
-	return x;
-}
+
+uint32_t time = 400;
 
 int main(void){
   //请认真确定你的外部晶振是否对应，8M请输入参数ClockSource_EX8M，
@@ -42,36 +35,26 @@ int main(void){
   DelayInit();
 	ledInit(PTB,0);
 	ledInit(PTC,3);
-
   DisableInterrupts();
-	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);                                                                                                                                                                                                                              	  
+	
+	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
-	//编码器初始化！！！！！！！！！！！！！！！
 	Counter0_Init();
 	Counter1_Init();
-	
-	while(1){		
+
+	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
-			cnt = 0;
-			cnt++;
-			if(cnt == 99) cnt = 0;
-			output.leftDuty = output.rightDuty = 0;
-			// balance handler
-			getBalanceData(&tmp_balance);
-			kalmanFilter(&tmp_balance, &angle);
-			balanceCtrl(&angle, &output);
-			// speed handler
-			getSpeedData(&speed);
-			speedCtrl(&speed,&output);
-			// direction handler
-			//getDirectionData(&tmp_direction);
-			//directionCtrl(&tmp_direction, &output);
 			
-			//spd.m_spd_direction = (int32_t) limit(directionControl(), maxPwmDuty);
+			output.leftDuty = output.rightDuty = 0;
+
+			balanceCtrl(&output);
+			speedCtrl(&output);
+			directionCtrl(&output);
+			
 			motorControl(&output);
-			}
 		}
+	}
 }

@@ -90,7 +90,7 @@ void GPIO_userInit(void){
 void PIT_userInit(void){
 	PIT_InitTypeDef pit_initer;
 	pit_initer.PITx = PIT0;
-	pit_initer.PIT_Interval = 1; //单位MS
+	pit_initer.PIT_Interval = 5; //单位MS
 	PIT_Init(&pit_initer);
 }
 

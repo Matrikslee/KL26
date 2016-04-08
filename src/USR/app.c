@@ -4,12 +4,13 @@
 #include "include.h"
 #include "led.h"
 #include "counter.h"
-static int32_t deadVoltage_L = 600;
+#include "tools.h"
+
+static int32_t deadVoltage_L = 50;
 static int32_t deadVoltage_R = 0;
 static int32_t motorLeft, motorRight;
-uint16_t tmp_accz, tmp_gyro;
-float tmp;
-extern uint8_t cnt;
+static float speed_now = 0;
+
 //vertical accz angle =0
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
@@ -33,93 +34,174 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO  1895 //static_gyro output
+#define GYRO_ZERO_X  0x083C //static_gyro output
+#define GYRO_ZERO_Y  0x0770 //static_gyro output
 #define ACCZ_ZERO  2080 //vertical_accz output
-#define SPEED_RATIO 0.0195312
+
 //get balance data
 void getBalanceData(balanceDataTypeDef* data){
+	float tmp;
+	uint16_t tmp_accz, tmp_gyro;
 	//get the value of the accz and process
 	tmp_accz = ADC_GetValue(2)>>4;
 	tmp = (tmp_accz-ACCZ_ZERO)*0.086;  //0.050708;//0.086
 	if(tmp>100) { tmp = 100; }
 	if(tmp<-100) { tmp = -100; }       //set the angle limit
 	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
-	if(data->m_accz > -2.75)
+	if(data->m_accz > -2.80)
 		GPIO_SetBits(PTC,3);
 	else
 		GPIO_ResetBits(PTC,3);
 	//get the value of the gyro and process
 	tmp_gyro = ADC_GetValue(5)>>4;
-	data->m_gyro = (tmp_gyro-GYRO_ZERO)*0.120248;	//0.120248  //need to debug to config the value(after kalman the value = 0)
+	data->m_gyro = (tmp_gyro-GYRO_ZERO_Y)*0.120248;	//0.120248  //need to debug to config the value(after kalman the value = 0)
 }
 
 const unsigned char directionChannel[] = {7,9,8,6};
 
 //get speed data
-void getSpeedData(speedTypeDef* data) {
-	data->m_leftSpeed = Counter0_Read();
-	data->m_rightSpeed = Counter1_Read();
-	data->m_totalSpeed = data->m_leftSpeed + data->m_rightSpeed;
-	data->m_leftFlag = GPIO_ReadInputDataBit(PTB,9);
-	data->m_rightFlag = GPIO_ReadInputDataBit(PTB,10);
-	if(data->m_leftSpeed == 0 && data->m_rightSpeed ==1)
-		data->m_totalSpeed = -data->m_totalSpeed;
-	else
-		data->m_totalSpeed = data->m_totalSpeed;
+float getSpeedData(void) {
+	static const float BMQ_SPEED_RATIO = 0.0554508;
+	uint8_t leftFlag, rightFlag;
+	float leftSpeed, rightSpeed;
+	leftFlag = !GPIO_ReadInputDataBit(PTB,9);
+	rightFlag = GPIO_ReadInputDataBit(PTB,10);
+	leftSpeed = Counter0_Read()*(leftFlag?-1.0f:1.0f);
+	rightSpeed = Counter1_Read()*(rightFlag?-1.0f:1.0f);
 	Counter0_Clear();
 	Counter1_Clear();
+	return BMQ_SPEED_RATIO*(leftSpeed + rightSpeed)/2.0f;
 }
 
-//get direction data
-void getDirectionData(directionDataTypeDef* data){
-	int i, ll ,rr;
-	for (i = 0; i < 4; ++i){
-		data->m_value[i] = ADC_GetValue(directionChannel[i])>>8;
+//get & calc direction data
+float getDirectionData(){
+	static const uint8_t directionChannel[] = {7,9,8,6};
+	static const uint8_t countNumber = 5;
+	static const uint8_t maxQueCount = 6;
+	static const uint8_t adNumber = 4;
+	static float que_value[adNumber][maxQueCount];
+	static float tmp_value[adNumber][countNumber];
+	static float value[adNumber] = {0};
+	static uint8_t que_count = 0;
+	float left, right, err, sum;
+ 	uint8_t i, j;
+	for(i = 0; i < adNumber; ++i){
+		for(j = 0; j < countNumber; ++j){
+			tmp_value[i][j] = ADC_GetValue(directionChannel[i])>>8;
+		}
 	}
-	ll = data->m_value[0];
-	rr = data->m_value[3];
-	data->m_dir_flag = (ll-rr)*1./(ll+rr);
+	for(i = 0; i < adNumber; i++) {
+		float max_value =0, min_value = 0, sum_value = 0;
+		for(j = 0; j < countNumber; j++) {
+			sum_value += tmp_value[i][j];
+			max_value = max(max_value, tmp_value[i][j]);
+			min_value = min(min_value, tmp_value[i][j]);
+ 		}
+		que_value[i][que_count] = (sum_value-max_value-min_value)/3;
+ 	}
+	que_count = (que_count+1)%maxQueCount;
+	for(i = 0; i < adNumber; ++i){
+		float sum_value = 0;
+		for(j = 0; j < maxQueCount; ++j){
+			sum_value += que_value[i][j];
+		}
+		value[i] = sum_value / maxQueCount;
+	}
+	left = value[0];
+	right = value[3];
+	
+	err = left - right;
+	sum = left + right + 1; // sum > 0
+	
+	return 100*err/sum;
 }
+
+const float balancedAngle = -10.7;
 
 //calculate the balance data
-void balanceCtrl(angleTypeDef* angle, dutyTypeDef* output) {
-	static const float balanceKp = 1000; 
-	static const float balanceKd = 15;
-	static const float balancedAngle = -4.00;
-	int32_t result = balanceKp*(angle->m_angle - balancedAngle)+balanceKd*angle->m_rate;
+void balanceCtrl(dutyTypeDef* output) {
+	static const float balanceKp = 1100;
+	static const float balanceKd = 0;
+	static angleTypeDef angle;
+	int32_t result;
+	
+	balanceDataTypeDef measure;
+	getBalanceData(&measure);
+	kalmanFilter(&measure, &angle);
+	result = balanceKp*(angle.m_angle - balancedAngle)+balanceKd*angle.m_rate;
 	output->leftDuty += result;
 	output->rightDuty += result;
+}
+
+float speedCalc(){
+	static const float SPEED_TO_DUTY = 12.034;
+	static const float maxSpeed_I = 10;
+	static const float speedCtrlKp = 1.5;
+	static const float speedCtrlKi = 0.5;
+	static const float setSpeed = 80;
+	static float speedError, speed_p = 0, speed_i = 0;
+	speedError = getSpeedData() - setSpeed;
+	
+	speed_p = speedError;
+	speed_i = limit(speed_i+speedError, maxSpeed_I);
+	
+	speed_now = speed_p*speedCtrlKp + speed_i*speedCtrlKi;
+	
+	return SPEED_TO_DUTY*speed_now;
 }
 
 //calculate the speed data
-void speedCtrl(speedTypeDef* speed, dutyTypeDef* output) {
-	int32_t temp_P,temp_I;
-	int32_t nValue;
-	int32_t speedError = 0;
-	int32_t speedInit = 5;
-	int32_t speedOld = 0;
-	int32_t speedNew = 0;
-	int32_t speedKeep = 0;
-	int32_t result;
-	float speed_P = 320;
-	float speed_I = 4.5;
-	speedError = speedInit - speed->m_totalSpeed/2*SPEED_RATIO;
-	temp_P = (uint32_t)(speedError * speed_P);
-	temp_I = (uint32_t)(speedError * speed_I);
-	speedOld = speedNew;
-	speedKeep += temp_I;
-	speedNew = temp_P + speedKeep;
-	nValue = speedNew - speedOld;
-	result = (int32_t)nValue*(cnt/100) + speedOld;
-	output->leftDuty += result;
-	output->rightDuty += result;
+void speedCtrl(dutyTypeDef* output) {
+	static const uint8_t maxSpeed_period = 60;
+	static uint8_t speed_period = 0;
+	static float cur_speed = 0, pre_speed = 0, err_speed, result;
+	
+	if(!speed_period) {
+		pre_speed = cur_speed;
+		cur_speed = speedCalc();
+	}
+	speed_period = (speed_period+1)%maxSpeed_period;
+	
+	err_speed = cur_speed - pre_speed;
+	
+	result = err_speed*(speed_period*1./maxSpeed_period) + pre_speed;
+	
+	output->leftDuty += (int32_t) result;
+	output->rightDuty += (int32_t) result;
 }
 
-//calcaulate the direction data
-void directionCtrl(directionDataTypeDef* data, dutyTypeDef* output){
-	const float ratio = 300;
-	output->leftDuty -= ratio*data->m_dir_flag;
-	output->rightDuty += ratio*data->m_dir_flag;
+float getXGyro(){
+	static float tmp_gyro;
+	tmp_gyro = ADC_GetValue(3)>>4;
+	return 0.23578*(tmp_gyro-GYRO_ZERO_X);
+}
+
+float directionCalc(){
+	static const float gyro_K = 0;
+	static const float sensor_Kp = 2.0;
+	static const float sensor_Kd = 0;
+	static float cur_sensor = 0, pre_sensor = 0;
+	static float gyro;
+	static float sensor_p;
+	static float sensor_d;
+	
+	cur_sensor = getDirectionData();
+	gyro = getXGyro();
+
+	sensor_p = cur_sensor;
+	sensor_d = cur_sensor - pre_sensor;
+	pre_sensor = cur_sensor;
+	
+	return sensor_p*sensor_Kp + sensor_d*sensor_Kd + gyro*gyro_K;
+}
+
+void directionCtrl(dutyTypeDef* output){
+	static float result;
+	
+	result = directionCalc();
+	
+	output->leftDuty -= (int32_t) result;
+	output->rightDuty += (int32_t) result;
 }
 
 //kalman fliter
@@ -174,7 +256,7 @@ void motorControl(const dutyTypeDef* output){
 	motorLeft = limit(output->leftDuty, maxPwmDuty);
 	motorRight = limit(output->rightDuty, maxPwmDuty);
 
-	if(motorLeft > 0){
+	if(motorRight != 0){
 		GPIO_SetBits(PTB,0);
 	}	else GPIO_ResetBits(PTB,0);
 
