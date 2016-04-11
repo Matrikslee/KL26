@@ -1,11 +1,13 @@
 #include "gpio.h"
 #include "uart.h"
 #include "delay.h"
-#include "dma.h"
+
+
 #include "spi.h"
 #include "pit.h"
 #include "adc.h"
 #include "i2c.h"
+
 #include "stdio.h"
 #include "TPM.h"
 #include "user.h"
@@ -13,13 +15,11 @@
 #include "counter.h"
 #include "include.h"
 
-dutyTypeDef output;
-
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
 const uint32_t maxPwmDuty = 6000;
 
-uint32_t time = 400;
+static uint32_t time = 400;
 
 static int32_t balance = 0, speed = 0, turn = 0;
 
@@ -42,10 +42,12 @@ int main(void){
 	while(1){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
+			
+			if(time>0) { time--; continue; }
 
 			balance = balanceCtrl();
 			speed = speedCtrl();
-			//turn = directionCtrl();
+			turn = directionCtrl();
 			
 			motorControl(balance, speed, turn);
 		}

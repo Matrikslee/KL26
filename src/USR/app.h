@@ -10,11 +10,6 @@ typedef struct {
 } angleTypeDef;
 
 typedef struct {
-	int32_t leftDuty;
-	int32_t rightDuty;
-} dutyTypeDef;
-
-typedef struct {
 	float m_accz;
 	float m_gyro;
 } balanceDataTypeDef;
@@ -35,6 +30,6 @@ int32_t speedCtrl(void);
 int32_t directionCtrl(void);
 
 //使用占空比控制电机
-void motorControl(int32_t, int32_t, int32_t);
+void motorControl(int32_t,int32_t,int32_t);
 
 #endif
