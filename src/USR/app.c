@@ -136,8 +136,8 @@ int32_t balanceCtrl() {
 float speedCalc(){
 	static const float SPEED_TO_DUTY = 11.034;
 	static const float maxSpeed_I = 10;
-	static const float speedCtrlKp = 3;
-	static const float speedCtrlKi = 1;
+	static const float speedCtrlKp = 5;
+	static const float speedCtrlKi = 1.5;
 	static const float setSpeed = 50;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
