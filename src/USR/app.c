@@ -31,72 +31,21 @@ const float  Asin_to_Angle[] = {
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
 #define GYRO_ZERO_X  0x083C //static_gyro output
-#define GYRO_ZERO_Y  0x0770 //static_gyro output
-#define ACCZ_ZERO  2080 //vertical_accz output
+#define GYRO_ZERO_Y  0x076C //static_gyro output
+#define ACCZ_ZERO_Y  0x07C0 //vertical_accz output
 
-//kalman fliter
-void kalmanFilter(const balanceDataTypeDef* measureData, angleTypeDef* result){
-	const float qAngle=0.001, qGyro=0.003, rAngle=0.5, dt=0.005;    //0.001/0.003/0.67  //0.004/0.008/0.01
-	static float e;
-	static float qBias;
-	static float k0, k1;
-	static float t0, t1;
-	static float angleErr;
- 	static float pCt0, pCt1;
- 	static float pDot[4] ={0,0,0,0};
- 	static float p[2][2] = {{ 1, 0 },{ 0, 1 }};
-
- 	result->m_angle += (measureData->m_gyro-qBias)*dt;
-
- 	pDot[0] = qAngle - p[0][1] - p[1][0];
- 	pDot[1] = -p[1][1];
- 	pDot[2] = -p[1][1];
- 	pDot[3] = qGyro;
-
- 	p[0][0] += pDot[0] * dt;
- 	p[0][1] += pDot[1] * dt;
- 	p[1][0] += pDot[2] * dt;
- 	p[1][1] += pDot[3] * dt;
-
- 	angleErr = measureData->m_accz - result->m_angle;
-
- 	pCt0 = p[0][0];
- 	pCt1 = p[1][0];
- 	e = rAngle + pCt0;
-
- 	k0 = pCt0 / e;
- 	k1 = pCt1 / e;
-
- 	t0 = pCt0;
- 	t1 = p[0][1];
-
- 	p[0][0] -= k0 * t0;
- 	p[0][1] -= k0 * t1;
- 	p[1][0] -= k1 * t0;
- 	p[1][1] -= k1 * t1;
-
- 	result->m_angle	+= k0 * angleErr;
-	qBias+= k1 * angleErr;
- 	result->m_rate = measureData->m_gyro-qBias;
- }
-
-//get balance data
-void getBalanceData(balanceDataTypeDef* data){
-	float tmp;
-	uint16_t tmp_accz, tmp_gyro;
-	//get the value of the accz and process
+float getYAccz(){
+	static float tmp;
+	static uint16_t tmp_accz;
 	tmp_accz = ADC_GetValue(2)>>4;
-	tmp = (tmp_accz-ACCZ_ZERO)*0.086;  //0.050708;//0.086
-	if(tmp>100) { tmp = 100; }
-	if(tmp<-100) { tmp = -100; }       //set the angle limit
-	data->m_accz = Asin_to_Angle[(uint8_t)(tmp+100)];
-	if(data->m_accz > -2.80)
-		GPIO_SetBits(PTC,3);
-	else
-		GPIO_ResetBits(PTC,3);
-	//get the value of the gyro and process
+	tmp = (tmp_accz-ACCZ_ZERO_Y)*0.086;
+	return Asin_to_Angle[limit((int32_t)tmp,100)+100];
+}
+
+float getYGyro(){
+	static uint16_t tmp_gyro;
 	tmp_gyro = ADC_GetValue(5)>>4;
-	data->m_gyro = (tmp_gyro-GYRO_ZERO_Y)*0.120248;	//0.120248  //need to debug to config the value(after kalman the value = 0)
+	return (tmp_gyro-GYRO_ZERO_Y)*0.120248;
 }
 
 const unsigned char directionChannel[] = {7,9,8,6};
@@ -158,29 +107,38 @@ float getDirectionData(){
 	return 100*err/sum;
 }
 
-const float balancedAngle = -10.4;
-
 //calculate the balance data
 int32_t balanceCtrl() {
-	static const float balanceKp = 900;
-	static const float balanceKd = 0;
-	static angleTypeDef angle;
+	static const float dt = 0.005;
+	static const float ratio = 0.985;
+	static const float ANGLE_DUTY_RATIO = 300;
+	static const float balance_Kp = 4;
+	static const float balance_Kd = 0.2;
+	static const float set_angle = -4;
+	static float cur_angle = 0;
+	static float err_angle = 0;
+	static float accz = 0;
+	static float gyro = 0;
 	int32_t result;
 	
-	balanceDataTypeDef measure;
-	getBalanceData(&measure);
-	kalmanFilter(&measure, &angle);
-	result = balanceKp*(angle.m_angle - balancedAngle)+balanceKd*angle.m_rate;
+	accz = getYAccz();
+	gyro = getYGyro();
 	
-	return (int32_t) result;
+	cur_angle = ratio*(cur_angle+gyro*dt)+(1-ratio)*accz;
+	
+	err_angle = cur_angle - set_angle;
+	
+	result = balance_Kp*err_angle + balance_Kd*gyro;
+	
+	return (int32_t) ANGLE_DUTY_RATIO*result;
 }
 
 float speedCalc(){
-	static const float SPEED_TO_DUTY = 12.034;
-	static const float maxSpeed_I = 13;
-	static const float speedCtrlKp = 3.0;
-	static const float speedCtrlKi = 0.5;
-	static const float setSpeed = 100;
+	static const float SPEED_TO_DUTY = 11.034;
+	static const float maxSpeed_I = 10;
+	static const float speedCtrlKp = 3;
+	static const float speedCtrlKi = 1;
+	static const float setSpeed = 50;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
 	
@@ -216,9 +174,9 @@ float getXGyro(){
 }
 
 float directionCalc(){
-	static const float gyro_K = 15;
+	static const float gyro_K = 20;
 	static const float sensor_Kp = 7;
-	static const float sensor_Kd = 11;
+	static const float sensor_Kd = 16;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;

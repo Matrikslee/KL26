@@ -47,8 +47,7 @@ int main(void){
 			balance = balanceCtrl();
 			speed = speedCtrl();
 			turn = directionCtrl();
-			
-			motorControl(balance, speed, turn);
 		}
+		motorControl(balance, speed, turn);
 	}
 }
