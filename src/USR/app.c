@@ -162,7 +162,7 @@ const float balancedAngle = -10.4;
 
 //calculate the balance data
 int32_t balanceCtrl() {
-	static const float balanceKp = 1000;
+	static const float balanceKp = 900;
 	static const float balanceKd = 0;
 	static angleTypeDef angle;
 	int32_t result;
@@ -178,9 +178,9 @@ int32_t balanceCtrl() {
 float speedCalc(){
 	static const float SPEED_TO_DUTY = 11.034;
 	static const float maxSpeed_I = 15;
-	static const float speedCtrlKp = 3;
+	static const float speedCtrlKp = 8;
 	static const float speedCtrlKi = 0.5;
-	static const float setSpeed = 100;
+	static const float setSpeed = 75;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
 	
@@ -216,9 +216,9 @@ float getXGyro(){
 }
 
 float directionCalc(){
-	static const float gyro_K = 7.0;
+	static const float gyro_K = 5;
 	static const float sensor_Kp = 3;
-	static const float sensor_Kd = 10.0;
+	static const float sensor_Kd = 10;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;

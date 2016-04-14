@@ -29,7 +29,6 @@ int main(void){
   SystemClockSetup(ClockSource_EX50M,CoreClock_120M);
 	UART_PortInit(UART0_RX_PD06_TX_PD07,128000);
 	UART_PortInit(UART1_RX_PE01_TX_PE00,96000);
-  DelayInit();
   DisableInterrupts();
 	
 	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);
