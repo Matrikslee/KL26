@@ -177,10 +177,10 @@ int32_t balanceCtrl() {
 
 float speedCalc(){
 	static const float SPEED_TO_DUTY = 12.034;
-	static const float maxSpeed_I = 15;
-	static const float speedCtrlKp = 5;
+	static const float maxSpeed_I = 13;
+	static const float speedCtrlKp = 3.0;
 	static const float speedCtrlKi = 0.5;
-	static const float setSpeed = 80;
+	static const float setSpeed = 100;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
 	
@@ -216,9 +216,9 @@ float getXGyro(){
 }
 
 float directionCalc(){
-	static const float gyro_K = 5;
-	static const float sensor_Kp = 4;
-	static const float sensor_Kd = 10;
+	static const float gyro_K = 15;
+	static const float sensor_Kp = 7;
+	static const float sensor_Kd = 11;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
