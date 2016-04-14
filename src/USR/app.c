@@ -176,11 +176,11 @@ int32_t balanceCtrl() {
 }
 
 float speedCalc(){
-	static const float SPEED_TO_DUTY = 11.034;
+	static const float SPEED_TO_DUTY = 12.034;
 	static const float maxSpeed_I = 15;
-	static const float speedCtrlKp = 8;
+	static const float speedCtrlKp = 5;
 	static const float speedCtrlKi = 0.5;
-	static const float setSpeed = 75;
+	static const float setSpeed = 80;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError = getSpeedData() - setSpeed;
 	
@@ -217,7 +217,7 @@ float getXGyro(){
 
 float directionCalc(){
 	static const float gyro_K = 5;
-	static const float sensor_Kp = 3;
+	static const float sensor_Kp = 4;
 	static const float sensor_Kd = 10;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
@@ -246,7 +246,7 @@ int32_t directionCtrl(){
 void motorControl(int32_t balance, int32_t speed, int32_t turn){
 	static int32_t tmp, left, right;
 	
-	tmp = limit(balance+speed, maxPwmDuty*5/6);
+	tmp = limit(balance+speed, maxPwmDuty-maxPwmDuty/6);
 	
 	left  =  limit(tmp-turn, maxPwmDuty-200);
 	right = limit(tmp+turn, maxPwmDuty-200);
