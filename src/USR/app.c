@@ -28,7 +28,7 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO_X  0x0810 //static_gyro output
+#define GYRO_ZERO_X  0x081E //static_gyro output
 #define GYRO_ZERO_Y  0x0753 //static_gyro output
 #define ACCZ_ZERO_Y  0x078E //vertical_accz output
 
@@ -47,10 +47,9 @@ float getYGyro(){
 }
 
 const unsigned char directionChannel[] = {7,9,8,6};
-
 //get speed data
 float getSpeedData(void) {
-	static const float BMQ_SPEED_RATIO = 0.0554508;
+	static const float BMQ_SPEED_RATIO = 0.554508;
 	static uint8_t leftFlag, rightFlag;
 	float leftSpeed, rightSpeed;
 	leftFlag = !GPIO_ReadInputDataBit(PTB,9);
@@ -107,10 +106,10 @@ float getDirectionData(){
 //calculate the balance data
 int32_t balanceCtrl() {
 	static const float dt = 0.005;
-	static const float ratio = 0.985;
-	static const float balance_Kp = 700;
-	static const float balance_Kd = 5;
-	static const float set_angle = 1;
+	static const float ratio = 0.995;
+	static const float balance_Kp = 1000;
+	static const float balance_Kd = 17;
+	static const float set_angle = 1.5;
 	static float cur_angle = 0;
 	static float err_angle;
 	static float accz;
@@ -131,9 +130,9 @@ int32_t balanceCtrl() {
 
 float speedCalc(int32_t m_speed){
 	static const float maxSpeed_I = 10000;
-	static const float speedCtrlKp = 30;
-	static const float speedCtrlKi = 0.1;
-	static const float setSpeed = 40;
+	static const float speedCtrlKp = 150;
+	static const float speedCtrlKi = 0.03;
+	static const float setSpeed = 5;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError =  m_speed - setSpeed;
 	
@@ -143,7 +142,6 @@ float speedCalc(int32_t m_speed){
 	return speed_p*speedCtrlKp + speed_i*speedCtrlKi;
 }
 
-int32_t debug_speed;
 
 //calculate the speed data
 int32_t speedCtrl() {
@@ -152,7 +150,7 @@ int32_t speedCtrl() {
 	static float cur_speed = 0, pre_speed = 0, err_speed, result;
 	static int32_t m_speed;
 	
-	debug_speed = m_speed = getSpeedData();
+	m_speed = getSpeedData();
 	if(!speed_period) {
 		pre_speed = cur_speed;
 		cur_speed = speedCalc(m_speed);
@@ -174,8 +172,8 @@ float getXGyro(){
 
 float directionCalc(){
 	static const float gyro_K = 5;
-	static const float sensor_Kp = 2;
-	static const float sensor_Kd = 8;
+	static const float sensor_Kp = 4;
+	static const float sensor_Kd = 20;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;

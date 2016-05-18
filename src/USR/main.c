@@ -50,7 +50,7 @@ int main(void){
 			
 			balance = balanceCtrl();
 			speed = speedCtrl();
-		  //turn = directionCtrl();
+		  turn = directionCtrl();
 		}
 		motorControl(balance, speed, turn);
 	}

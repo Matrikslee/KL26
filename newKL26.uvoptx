@@ -150,7 +150,7 @@
           <Type>0</Type>
           <LineNumber>46</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>9964</Address>
+          <Address>10800</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -160,6 +160,22 @@
           <Filename>\psf\Home\Desktop\233\src\USR\app.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\newKL26\src/USR/app.c\46</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>171</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>10630</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>\psf\Home\Desktop\233\src\USR\app.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\newKL26\src/USR/app.c\171</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -185,6 +201,11 @@
         </Ww>
         <Ww>
           <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tmp_gyro</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
           <WinNumber>1</WinNumber>
           <ItemText>tmp_gyro</ItemText>
         </Ww>
