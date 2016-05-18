@@ -5,8 +5,6 @@
 #include "counter.h"
 #include "tools.h"
 
-static int32_t deadVoltage_L = 50;
-static int32_t deadVoltage_R = 0;
 //vertical accz angle =0
 const float  Asin_to_Angle[] = {
 -90.000000,-81.890386,-78.521659,-75.930132,-73.739795,-71.805128,-70.051556,-68.434815,-66.926082,-65.505352,
@@ -30,9 +28,9 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO_X  0x083C //static_gyro output
-#define GYRO_ZERO_Y  0x076C //static_gyro output
-#define ACCZ_ZERO_Y  0x07C0 //vertical_accz output
+#define GYRO_ZERO_X  0x0810 //static_gyro output
+#define GYRO_ZERO_Y  0x0753 //static_gyro output
+#define ACCZ_ZERO_Y  0x078E //vertical_accz output
 
 float getYAccz(){
 	static float tmp;
@@ -53,7 +51,7 @@ const unsigned char directionChannel[] = {7,9,8,6};
 //get speed data
 float getSpeedData(void) {
 	static const float BMQ_SPEED_RATIO = 0.0554508;
-	uint8_t leftFlag, rightFlag;
+	static uint8_t leftFlag, rightFlag;
 	float leftSpeed, rightSpeed;
 	leftFlag = !GPIO_ReadInputDataBit(PTB,9);
 	rightFlag = GPIO_ReadInputDataBit(PTB,10);
@@ -98,28 +96,26 @@ float getDirectionData(){
 		}
 		value[i] = sum_value / maxQueCount;
 	}
-	left = value[0];
-	right = value[3];
+	right = value[0]; //+ value[1];
+	left = value[3]; //+ value[3];
 	
 	err = left - right;
 	sum = left + right + 1; // sum > 0
 	
 	return 100*err/sum;
 }
-
 //calculate the balance data
 int32_t balanceCtrl() {
 	static const float dt = 0.005;
 	static const float ratio = 0.985;
-	static const float ANGLE_DUTY_RATIO = 300;
-	static const float balance_Kp = 4.5;
-	static const float balance_Kd = 0;
-	static const float set_angle = 0;
+	static const float balance_Kp = 700;
+	static const float balance_Kd = 5;
+	static const float set_angle = 1;
 	static float cur_angle = 0;
-	static float err_angle = 0;
-	static float accz = 0;
-	static float gyro = 0;
-	int32_t result;
+	static float err_angle;
+	static float accz;
+	static float gyro;
+	float result;
 	
 	accz = getYAccz();
 	gyro = getYGyro();
@@ -130,33 +126,36 @@ int32_t balanceCtrl() {
 	
 	result = balance_Kp*err_angle + balance_Kd*gyro;
 	
-	return (int32_t) ANGLE_DUTY_RATIO*result;
+	return (int32_t) result;
 }
 
-float speedCalc(){
-	static const float SPEED_TO_DUTY = 11.034;
-	static const float maxSpeed_I = 10;
-	static const float speedCtrlKp = 4.85;
-	static const float speedCtrlKi = 0;
-	static const float setSpeed = 25;
+float speedCalc(int32_t m_speed){
+	static const float maxSpeed_I = 10000;
+	static const float speedCtrlKp = 30;
+	static const float speedCtrlKi = 0.1;
+	static const float setSpeed = 40;
 	static float speedError, speed_p = 0, speed_i = 0;
-	speedError = getSpeedData() - setSpeed;
+	speedError =  m_speed - setSpeed;
 	
 	speed_p = speedError;
 	speed_i = limit(speed_i+speedError, maxSpeed_I);
 	
-	return SPEED_TO_DUTY*(speed_p*speedCtrlKp + speed_i*speedCtrlKi);
+	return speed_p*speedCtrlKp + speed_i*speedCtrlKi;
 }
+
+int32_t debug_speed;
 
 //calculate the speed data
 int32_t speedCtrl() {
-	static const uint8_t maxSpeed_period = 60;  //60
+	static const uint8_t maxSpeed_period = 100;
 	static uint8_t speed_period = 0;
 	static float cur_speed = 0, pre_speed = 0, err_speed, result;
+	static int32_t m_speed;
 	
+	debug_speed = m_speed = getSpeedData();
 	if(!speed_period) {
 		pre_speed = cur_speed;
-		cur_speed = speedCalc();
+		cur_speed = speedCalc(m_speed);
 	}
 	speed_period = (speed_period+1)%maxSpeed_period;
 	
@@ -168,15 +167,15 @@ int32_t speedCtrl() {
 }
 
 float getXGyro(){
-	static float tmp_gyro;
+	static uint16_t tmp_gyro;
 	tmp_gyro = ADC_GetValue(3)>>4;
 	return 0.23578*(tmp_gyro-GYRO_ZERO_X);
 }
 
 float directionCalc(){
-	static const float gyro_K = 20;
-	static const float sensor_Kp = 6;
-	static const float sensor_Kd = 6;  //16
+	static const float gyro_K = 5;
+	static const float sensor_Kp = 2;
+	static const float sensor_Kd = 8;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
@@ -204,24 +203,13 @@ int32_t directionCtrl(){
 void motorControl(int32_t balance, int32_t speed, int32_t turn){
 	static int32_t tmp, left, right;
 	
-	tmp = limit(balance+speed, maxPwmDuty-maxPwmDuty/6);
+	turn = limit(turn,500);
 	
-	left  =  limit(tmp-turn, maxPwmDuty-200);
-	right = limit(tmp+turn, maxPwmDuty-200);
+	tmp = maxPwmDuty+limit(balance+speed, maxPwmDuty-500);
 	
-	if(left > 0){
-		PWMOutput(pwmArray[1], 0);
-		PWMOutput(pwmArray[0], deadVoltage_L+left);
-	} else {
-		PWMOutput(pwmArray[0], 0);
-		PWMOutput(pwmArray[1], deadVoltage_L-left);
-	}
-
-	if(right > 0){
-		PWMOutput(pwmArray[3], 0);
-		PWMOutput(pwmArray[2], deadVoltage_R+right);
-	} else {
-		PWMOutput(pwmArray[2], 0);
-		PWMOutput(pwmArray[3], deadVoltage_R-right);
-	}
+	left  =  tmp-turn;
+	right = tmp+turn;
+	
+	PWMOutput(pwmArray[0],left);
+	PWMOutput(pwmArray[1],right);
 }

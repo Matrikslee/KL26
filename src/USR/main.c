@@ -17,7 +17,7 @@
 
 const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
-const uint32_t maxPwmDuty = 6000;
+const uint32_t maxPwmDuty = 3000;
 
 static uint32_t time = 400;
 
@@ -31,7 +31,7 @@ int main(void){
 	UART_PortInit(UART1_RX_PE01_TX_PE00,96000);
   DisableInterrupts();
 	
-	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty);
+	PWM_userInit(pwmArray, pwmNumber, maxPwmDuty*2);
 	ADC_userInit();
 	GPIO_userInit();
 	PIT_userInit();
@@ -42,11 +42,15 @@ int main(void){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
 			
-			if(time>0) { time--; continue; }
-
+			if(time>0) { 
+				time--; 
+				PWMOutput(pwmArray[0],3000);
+				PWMOutput(pwmArray[1],3000);
+				continue; }
+			
 			balance = balanceCtrl();
 			speed = speedCtrl();
-			turn = directionCtrl();
+		  //turn = directionCtrl();
 		}
 		motorControl(balance, speed, turn);
 	}
