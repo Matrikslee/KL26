@@ -28,7 +28,7 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO_X  0x081E //static_gyro output
+#define GYRO_ZERO_X  0x080A //static_gyro output
 #define GYRO_ZERO_Y  0x0753 //static_gyro output
 #define ACCZ_ZERO_Y  0x078E //vertical_accz output
 
@@ -132,7 +132,7 @@ float speedCalc(int32_t m_speed){
 	static const float maxSpeed_I = 10000;
 	static const float speedCtrlKp = 150;
 	static const float speedCtrlKi = 0.03;
-	static const float setSpeed = 5;
+	static const float setSpeed = 15;
 	static float speedError, speed_p = 0, speed_i = 0;
 	speedError =  m_speed - setSpeed;
 	
@@ -171,9 +171,9 @@ float getXGyro(){
 }
 
 float directionCalc(){
-	static const float gyro_K = 5;
+	static const float gyro_K = 0;
 	static const float sensor_Kp = 4;
-	static const float sensor_Kd = 20;
+	static const float sensor_Kd = 100;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
