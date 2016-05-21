@@ -19,7 +19,7 @@ const uint32_t pwmNumber = 4;
 const uint8_t pwmArray[pwmNumber] = {PTA5, PTA12, PTE24, PTE25};
 const uint32_t maxPwmDuty = 3000;
 
-static uint32_t time = 400;
+static uint32_t time = 0;
 
 static int32_t balance = 0, speed = 0, turn = 0;
 
@@ -42,15 +42,14 @@ int main(void){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
 			
-			if(time>0) { 
-				time--; 
-				PWMOutput(pwmArray[0],3000);
-				PWMOutput(pwmArray[1],3000);
-				continue; }
+			if(time<300) { ++time; }
 			
 			balance = balanceCtrl();
 			speed = speedCtrl();
 		  turn = directionCtrl();
+		}
+		if(time < 300) {
+			balance = speed = turn = 0;
 		}
 		motorControl(balance, speed, turn);
 	}

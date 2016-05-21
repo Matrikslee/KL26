@@ -46,7 +46,6 @@ float getYGyro(){
 	return (tmp_gyro-GYRO_ZERO_Y)*0.120248;
 }
 
-const unsigned char directionChannel[] = {7,9,8,6};
 //get speed data
 float getSpeedData(void) {
 	static const float BMQ_SPEED_RATIO = 0.554508;
@@ -101,15 +100,15 @@ float getDirectionData(){
 	err = left - right;
 	sum = left + right + 1; // sum > 0
 	
-	return 100*err/sum;
+	return 1000*err/sum;
 }
 //calculate the balance data
 int32_t balanceCtrl() {
 	static const float dt = 0.005;
 	static const float ratio = 0.995;
-	static const float balance_Kp = 1000;
+	static const float balance_Kp = 1200;
 	static const float balance_Kd = 17;
-	static const float set_angle = 1.5;
+	static const float set_angle = 0.85;  //1.5
 	static float cur_angle = 0;
 	static float err_angle;
 	static float accz;
@@ -128,20 +127,29 @@ int32_t balanceCtrl() {
 	return (int32_t) result;
 }
 
-float speedCalc(int32_t m_speed){
+#define RUN_SPEED 30
+
+int32_t get_set_speed(){
+	static const uint8_t max_cnt = 6;
+	static uint8_t cnt = 0;
+	if(cnt < max_cnt) { ++cnt; }
+	return RUN_SPEED*cnt/max_cnt;
+}
+
+float speedCalc(int32_t m_speed) {
 	static const float maxSpeed_I = 10000;
-	static const float speedCtrlKp = 150;
-	static const float speedCtrlKi = 0.03;
-	static const float setSpeed = 15;
-	static float speedError, speed_p = 0, speed_i = 0;
-	speedError =  m_speed - setSpeed;
+	static const float speedCtrlKp = 450;
+	static const float speedCtrlKi = 8;
+	static float speed_err, speed_p, speed_i = 0;
 	
-	speed_p = speedError;
-	speed_i = limit(speed_i+speedError, maxSpeed_I);
+	speed_err =  m_speed - get_set_speed();
+	
+	speed_p = speed_err;
+	speed_i += speed_err;
+	speed_i = limit(speed_i, maxSpeed_I);
 	
 	return speed_p*speedCtrlKp + speed_i*speedCtrlKi;
 }
-
 
 //calculate the speed data
 int32_t speedCtrl() {
@@ -151,6 +159,7 @@ int32_t speedCtrl() {
 	static int32_t m_speed;
 	
 	m_speed = getSpeedData();
+	
 	if(!speed_period) {
 		pre_speed = cur_speed;
 		cur_speed = speedCalc(m_speed);
@@ -172,8 +181,8 @@ float getXGyro(){
 
 float directionCalc(){
 	static const float gyro_K = 0;
-	static const float sensor_Kp = 4;
-	static const float sensor_Kd = 100;
+	static const float sensor_Kp = 0.5;
+	static const float sensor_Kd = 70;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
@@ -182,6 +191,8 @@ float directionCalc(){
 	cur_sensor = getDirectionData();
 	gyro = getXGyro();
 
+	//if(fabs(cur_sensor)<0.01) cur_sensor = 0;
+	
 	sensor_p = cur_sensor;
 	sensor_d = cur_sensor - pre_sensor;
 	pre_sensor = cur_sensor;
