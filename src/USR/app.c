@@ -100,14 +100,14 @@ float getDirectionData(){
 	err = left - right;
 	sum = left + right + 1; // sum > 0
 	
-	return 1000*err/sum;
+	return 500*err/sum;
 }
 //calculate the balance data
 int32_t balanceCtrl() {
 	static const float dt = 0.005;
 	static const float ratio = 0.995;
 	static const float balance_Kp = 1200;
-	static const float balance_Kd = 17;
+	static const float balance_Kd = 20;
 	static const float set_angle = 0.85;  //1.5
 	static float cur_angle = 0;
 	static float err_angle;
@@ -127,28 +127,29 @@ int32_t balanceCtrl() {
 	return (int32_t) result;
 }
 
-#define RUN_SPEED 30
+#define RUN_SPEED 40
 
 int32_t get_set_speed(){
-	static const uint8_t max_cnt = 6;
+	static const uint8_t max_cnt = 3;
 	static uint8_t cnt = 0;
 	if(cnt < max_cnt) { ++cnt; }
 	return RUN_SPEED*cnt/max_cnt;
 }
 
 float speedCalc(int32_t m_speed) {
-	static const float maxSpeed_I = 10000;
-	static const float speedCtrlKp = 450;
-	static const float speedCtrlKi = 8;
+	static const float max_speed_i = 1300;
+	static const float speedCtrlKp = 200;
+	static const float speedCtrlKi = 7;
 	static float speed_err, speed_p, speed_i = 0;
 	
 	speed_err =  m_speed - get_set_speed();
 	
-	speed_p = speed_err;
-	speed_i += speed_err;
-	speed_i = limit(speed_i, maxSpeed_I);
+	speed_p = speed_err*speedCtrlKp;
+	speed_i += speed_err*speedCtrlKi;
 	
-	return speed_p*speedCtrlKp + speed_i*speedCtrlKi;
+	speed_i = flimit(speed_i, max_speed_i);
+	
+	return speed_p + speed_i;
 }
 
 //calculate the speed data
@@ -181,8 +182,8 @@ float getXGyro(){
 
 float directionCalc(){
 	static const float gyro_K = 0;
-	static const float sensor_Kp = 0.5;
-	static const float sensor_Kd = 70;
+	static const float sensor_Kp = 3;
+	static const float sensor_Kd = 280;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
@@ -210,13 +211,14 @@ int32_t directionCtrl(){
 
 //control the motors by using the SPD data
 void motorControl(int32_t balance, int32_t speed, int32_t turn){
+	static const int32_t max_turn = 500;
 	static int32_t tmp, left, right;
 	
-	turn = limit(turn,500);
+	turn = limit(turn, max_turn);
 	
-	tmp = maxPwmDuty+limit(balance+speed, maxPwmDuty-500);
+	tmp = maxPwmDuty+limit(balance+speed,maxPwmDuty-max_turn);
 	
-	left  =  tmp-turn;
+	left  = tmp-turn;
 	right = tmp+turn;
 	
 	PWMOutput(pwmArray[0],left);

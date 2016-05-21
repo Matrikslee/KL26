@@ -5,6 +5,7 @@
 float max(float, float);
 float min(float, float);
 int limit(int, int);
+float flimit(float, float);
 float fabs(float);
 
 #endif
