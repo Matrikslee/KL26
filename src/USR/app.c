@@ -28,7 +28,7 @@ const float  Asin_to_Angle[] = {
 54.095931,55.084794,56.098738,57.140120,58.211669,59.316583,60.458639,61.642363,62.873247,64.158067,
 65.505352,66.926082,68.434815,70.051556,71.805128,73.739795,75.930132,78.521659,81.890386,90.000000,
 };
-#define GYRO_ZERO_X  0x080A //static_gyro output
+#define GYRO_ZERO_X  0x07FC //static_gyro output
 #define GYRO_ZERO_Y  0x0753 //static_gyro output
 #define ACCZ_ZERO_Y  0x078E //vertical_accz output
 
@@ -100,15 +100,15 @@ float getDirectionData(){
 	err = left - right;
 	sum = left + right + 1; // sum > 0
 	
-	return 500*err/sum;
+	return 100*err/sum;
 }
 //calculate the balance data
 int32_t balanceCtrl() {
 	static const float dt = 0.005;
 	static const float ratio = 0.995;
-	static const float balance_Kp = 1200;
+	static const float balance_Kp = 1300;
 	static const float balance_Kd = 20;
-	static const float set_angle = 0.85;  //1.5
+	static const float set_angle = -5;  //1.5
 	static float cur_angle = 0;
 	static float err_angle;
 	static float accz;
@@ -127,7 +127,7 @@ int32_t balanceCtrl() {
 	return (int32_t) result;
 }
 
-#define RUN_SPEED 40
+#define RUN_SPEED 35
 
 int32_t get_set_speed(){
 	static const uint8_t max_cnt = 3;
@@ -138,8 +138,8 @@ int32_t get_set_speed(){
 
 float speedCalc(int32_t m_speed) {
 	static const float max_speed_i = 1300;
-	static const float speedCtrlKp = 200;
-	static const float speedCtrlKi = 7;
+	static const float speedCtrlKp = 350;
+	static const float speedCtrlKi = 10;
 	static float speed_err, speed_p, speed_i = 0;
 	
 	speed_err =  m_speed - get_set_speed();
@@ -181,9 +181,9 @@ float getXGyro(){
 }
 
 float directionCalc(){
-	static const float gyro_K = 0;
+	static const float gyro_K = 1;
 	static const float sensor_Kp = 3;
-	static const float sensor_Kd = 280;
+	static const float sensor_Kd = 300;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
@@ -211,7 +211,7 @@ int32_t directionCtrl(){
 
 //control the motors by using the SPD data
 void motorControl(int32_t balance, int32_t speed, int32_t turn){
-	static const int32_t max_turn = 500;
+	static const int32_t max_turn = 600;
 	static int32_t tmp, left, right;
 	
 	turn = limit(turn, max_turn);
