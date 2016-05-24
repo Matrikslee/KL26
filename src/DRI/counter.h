@@ -1,6 +1,7 @@
 #ifndef COUNTER_H_
 #define COUNTER_H_
-#include "ctype.h"
+#include "stdint.h"
+
 /*
 **	##################################################################################
 **	Counter0_Init()初始化一个计数器，初始化以后就可以使用了,使用引脚为PTC5   方向b18

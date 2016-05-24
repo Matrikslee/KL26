@@ -2,8 +2,11 @@
 #ifndef __TOOLS_H__
 #define __TOOLS_H__
 
-float max(float, float);
-float min(float, float);
+#include <math.h>
+
+extern const float Asin_to_Angle[];
+
 int limit(int, int);
+float flimit(float, float);
 
 #endif

@@ -1,4 +1,3 @@
-.#*
 *.ini
 *.o
 *.d
@@ -16,5 +15,4 @@
 *.lst
 *.uvguix*
 *.iex
-Objects/
-Listings/
+*.TMP

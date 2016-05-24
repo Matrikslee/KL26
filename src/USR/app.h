@@ -2,7 +2,11 @@
 #ifndef __APP_H__
 #define __APP_H__
 
+#include "TPM.h"
+#include "user.h"
+#include "counter.h"
 #include "stdint.h"
+#include "tools.h"
 
 //计算平衡环占空比
 int32_t balanceCtrl(void);

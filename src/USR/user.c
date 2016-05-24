@@ -1,13 +1,8 @@
 #include "user.h"
-#include "stdint.h"
-#include "adc.h"
-#include "gpio.h"
-#include "uart.h"
-#include "pit.h"
-#include "sys.h"
-#include "TPM.h"
-#include "counter.h"
-#include "dma.h"
+
+#define ACCZ_X_OFFSET (0)
+#define ACCZ_Y_OFFSET (0x078E)
+#define ACCZ_Z_OFFSET (0)
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
 {
@@ -37,11 +32,7 @@ static const PeripheralMapTypeDef ADC_Check_Maps[] =
 	{0, 3, 1, 6, 1, 7, 1},  //ADC0_SE7B_PD6 23
 };
 
-const uint8_t adc_channel_length = 10;
-const uint8_t adc_channel_index[adc_channel_length]={5,7,8,9,10,11,15,16,17,19};
-
-uint32_t ADC_CalxMap(uint8_t chl)
-{
+uint32_t ADC_CalxMap(uint8_t chl){
 	uint32_t value = 0;
 	value =   ADC_Check_Maps[chl].m_ModuleIndex<<0;
 	value |=  ADC_Check_Maps[chl].m_PortIndex <<3;
@@ -53,58 +44,117 @@ uint32_t ADC_CalxMap(uint8_t chl)
 	return value;
 }
 
+const uint8_t adc_number = 10;
+const uint8_t adc_index[adc_number]={7,8,5,9,11,10,15,16,17,19};
+//======================================================================
+//获取ADC口信号函数
+//入口：通道(channel):
+//	0,1,2:   加速度计 X、Y、Z
+//	3,4,5 :  陀螺仪   X、Y、Z
+//	6,7,8,9: 电感
+//返回：信号值
+//======================================================================
+
 uint32_t ADC_GetValue(uint8_t index){
-	return ADC_GetConversionValue(ADC_CalxMap(adc_channel_index[index]));
+	index = adc_index[index];
+	return ADC_GetConversionValue(ADC_CalxMap(index));
 }
 
-//ADC初始化函数
-void ADC_userInit(void){
-	ADC_InitTypeDef adc_initer;
-	uint8_t i = 0;
-	for (i = 0; i < adc_channel_length; ++ i){
-		adc_initer.ADCxMap = ADC_CalxMap(adc_channel_index[i]);
-		adc_initer.ADC_Precision = ADC_PRECISION_16BIT;
-		adc_initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
-		ADC_Init(&adc_initer);
-	}
+void inductance_userInit(void){
+	ADC_InitTypeDef initer;
+	initer.ADC_Precision = ADC_PRECISION_16BIT;
+	initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
+	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_LL);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_LR);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_RL);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_RR);
+	ADC_Init(&initer);
 }
 
-const uint32_t gpio_pin_length = 3;
-const gpioPinTypeDef gpio_pin[gpio_pin_length] = {{PTB, 9}, {PTB,10}, {PTE,3}};
-
-//GPIO初始化函数
 void GPIO_userInit(void){
-	GPIO_InitTypeDef gpio_initer;
-	uint8_t i = 0;
-	for (i = 0; i < gpio_pin_length; ++i){
-		gpio_initer.GPIO_Pin = gpio_pin[i].Pin;
-		gpio_initer.GPIO_InitState = Bit_RESET;
-		gpio_initer.GPIO_IRQMode = GPIO_IT_DISABLE;
-		gpio_initer.GPIO_Mode = GPIO_Mode_IPU;
-		gpio_initer.GPIOx = gpio_pin[i].GPIO;
-		GPIO_Init(&gpio_initer);
-	}
-}
-
-//PIT初始化函数
-void PIT_userInit(void){
-	PIT_InitTypeDef pit_initer;
-	pit_initer.PITx = PIT0;
-	pit_initer.PIT_Interval = 5; //单位MS
-	PIT_Init(&pit_initer);
-}
-
-//DMA初始化函数
-void DMA_userInit(void){
-	DMA_InitTypeDef dma_initer;
-	dma_initer.Channelx = 0;
-	DMA_Init(&dma_initer);
+	GPIO_InitTypeDef initer;
+	initer.GPIO_InitState = Bit_RESET;
+	initer.GPIO_IRQMode = GPIO_IT_DISABLE;
+	initer.GPIO_Mode = GPIO_Mode_IPU;
 	
+	initer.GPIOx = PTB;
+	initer.GPIO_Pin = 9;
+	GPIO_Init(&initer);
+	
+	initer.GPIO_Pin = 10;
+	GPIO_Init(&initer);
+	
+	initer.GPIOx = PTE;
+	initer.GPIO_Pin = 3;
+	GPIO_Init(&initer);
 }
 
-void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty){
-	int i;
-	for ( i = 0; i < len; ++i){
-		PWMInit(pwmArray[i],DIV1,maxPwmDuty);
+void PIT_userInit(void){
+	PIT_InitTypeDef initer;
+	initer.PITx = PIT0;
+	initer.PIT_Interval = 5; //单位MS
+	PIT_Init(&initer);
+}
+
+void PWM_userInit(){
+	PWMInit(PWM_LEFT,  DIV1, MAX_PWM_DUTY);
+	PWMInit(PWM_RIGHT, DIV1, MAX_PWM_DUTY);
+}
+
+static const uint8_t imu_number = 6;
+static const float imu_ratio[imu_number] = {0.23578,0.120248,0,0,0.086,0};
+static float imu_offset[imu_number] = {0,0,0,ACCZ_X_OFFSET, ACCZ_Y_OFFSET, ACCZ_Z_OFFSET};
+
+void IMU_userInit(){
+	ADC_InitTypeDef initer;
+	initer.ADC_Precision = ADC_PRECISION_16BIT;
+	initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
+	
+	initer.ADCxMap = ADC_CalxMap(ACCZ_Y);
+	ADC_Init(&initer);
+	
+	initer.ADCxMap = ADC_CalxMap(GYRO_X);
+	ADC_Init(&initer);
+	
+	initer.ADCxMap = ADC_CalxMap(GYRO_Y);
+	ADC_Init(&initer);
+}
+
+
+//陀螺仪零偏值初始化函数
+void gryo_offsetInit(void) {
+	const uint8_t smaple_amount = 10;
+	static const uint8_t gyro_number = 3;
+	int i, j;
+	for ( i = 0; i < gyro_number; ++ i) {
+		float sample = 0;
+		for ( j = 0; j < smaple_amount; ++ i) {
+			sample += ADC_GetValue(i)>>4;
+		}
+		imu_offset[i] = sample / smaple_amount;
 	}
+}
+
+float getAcczValue(uint8_t index) {
+	int32_t tmp;
+	uint32_t tmp_value;
+	index = adc_index[index];
+	tmp_value = ADC_GetValue(index)>>4;
+	tmp = (int32_t) ((tmp_value-imu_offset[index])*imu_ratio[index]);
+	return Asin_to_Angle[limit(tmp,100)+100];
+}
+
+float getGyroValue(uint8_t index){
+	uint16_t tmp_value;
+	index = adc_index[index];
+	tmp_value = ADC_GetValue(index)>>4;
+	return (tmp_value-imu_offset[index])*imu_ratio[index];
+}
+
+float getInductanceValue(uint8_t index){
+	index = adc_index[index];
+	return ADC_GetValue(index)>>8;
 }
