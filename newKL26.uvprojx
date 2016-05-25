@@ -388,19 +388,9 @@
               <FilePath>.\src\DRI\gpio.c</FilePath>
             </File>
             <File>
-              <FileName>i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DRI\i2c.c</FilePath>
-            </File>
-            <File>
               <FileName>pit.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\DRI\pit.c</FilePath>
-            </File>
-            <File>
-              <FileName>spi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DRI\spi.c</FilePath>
             </File>
             <File>
               <FileName>sys.c</FileName>
@@ -421,16 +411,6 @@
               <FileName>counter.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\DRI\counter.c</FilePath>
-            </File>
-            <File>
-              <FileName>delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DRI\delay.c</FilePath>
-            </File>
-            <File>
-              <FileName>dma.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\DRI\dma.c</FilePath>
             </File>
           </Files>
         </Group>

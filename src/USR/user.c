@@ -7,7 +7,6 @@
 #include "sys.h"
 #include "TPM.h"
 #include "counter.h"
-#include "dma.h"
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
 {
@@ -92,14 +91,6 @@ void PIT_userInit(void){
 	pit_initer.PITx = PIT0;
 	pit_initer.PIT_Interval = 5; //单位MS
 	PIT_Init(&pit_initer);
-}
-
-//DMA初始化函数
-void DMA_userInit(void){
-	DMA_InitTypeDef dma_initer;
-	dma_initer.Channelx = 0;
-	DMA_Init(&dma_initer);
-	
 }
 
 void PWM_userInit(const uint8_t* pwmArray, uint8_t len, uint32_t maxPwmDuty){

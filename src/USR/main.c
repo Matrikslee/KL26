@@ -1,13 +1,7 @@
 #include "gpio.h"
 #include "uart.h"
-#include "delay.h"
-
-
-#include "spi.h"
 #include "pit.h"
 #include "adc.h"
-#include "i2c.h"
-
 #include "stdio.h"
 #include "TPM.h"
 #include "user.h"

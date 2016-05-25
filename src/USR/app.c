@@ -108,7 +108,7 @@ int32_t balanceCtrl() {
 	static const float ratio = 0.995;
 	static const float balance_Kp = 1300;
 	static const float balance_Kd = 20;
-	static const float set_angle = -5;  //1.5
+	static const float set_angle = -4.8;
 	static float cur_angle = 0;
 	static float err_angle;
 	static float accz;
