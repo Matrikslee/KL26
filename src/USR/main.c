@@ -49,8 +49,10 @@ int main(void){
 			turn = directionCtrl();
 		}
 		if(time < 300) {
-			balance = speed = turn = 0;
+			speed = turn = 0;
 		}
+		
+		speed = turn = 0;
 		
 		motorControl(balance, speed, turn);
 	}
