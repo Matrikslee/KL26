@@ -1,9 +1,8 @@
 #include "app.h"
 
-//get speed data
 float getSpeedData(void) {
-	static const float BMQ_SPEED_RATIO = 0.554508;
-	static uint8_t leftFlag, rightFlag;
+	const float BMQ_SPEED_RATIO = 0.554508;
+	uint8_t leftFlag, rightFlag;
 	float leftSpeed, rightSpeed;
 	leftFlag = !GPIO_ReadInputDataBit(PTB,9);
 	rightFlag = GPIO_ReadInputDataBit(PTB,10);
@@ -14,12 +13,11 @@ float getSpeedData(void) {
 	return BMQ_SPEED_RATIO*(leftSpeed + rightSpeed)/2.0f;
 }
 
-//get & calc direction data
 float getDirectionData(){
-	static const uint8_t queue_length = 6;
-	static const uint8_t count_number = 5;
-	static const uint8_t inductance_number = 4;
-	static const uint8_t inductance_index[] = {INDUCTANCE_LL,INDUCTANCE_LR,INDUCTANCE_RL,INDUCTANCE_RR};
+	const uint8_t queue_length = 6;
+	const uint8_t count_number = 5;
+	const uint8_t inductance_number = 4;
+	const uint8_t inductance_index[] = {INDUCTANCE_LL,INDUCTANCE_LR,INDUCTANCE_RL,INDUCTANCE_RR};
 	static float queue[inductance_number][queue_length];
 	static float tmp_value[inductance_number][count_number];
 	static float result[inductance_number] = {0};
@@ -48,31 +46,30 @@ float getDirectionData(){
 		}
 		result[i] = sum_value / queue_length;
 	}
-	right = result[0]; //+ value[1];
-	left = result[3]; //+ value[3];
+	
+	left  = (result[0]/* + result[3]*/)*0.8;
+	right = (result[3]/* + result[1]*/);
 	
 	err = left - right;
-	sum = left + right + 1; // sum > 0
+	sum = left + right + 1;
 	
 	return 100*err/sum;
 }
-//calculate the balance data
+
 int32_t balanceCtrl() {
-	static const float dt = 0.005;
-	static const float ratio = 0.995;
-	static const float balance_Kp = 1300;
-	static const float balance_Kd = 20;
-	static const float set_angle = -5;  //1.5
+	const float dt = 0.005;
+	const float ratio = 0.995;
+	const float balance_Kp = 1300;
+  const float balance_Kd = 20;
+	const float set_angle = -4.3;
 	static float cur_angle = 0;
-	static float err_angle;
-	static float accz;
-	static float gyro;
+	float err_angle;
+	float accz;
+	float gyro;
 	float result;
 
-	accz = getIMUValue(ACCZ_Y);
-	
-	accz = asinhf(accz);
-	gyro = getIMUValue(GYRO_Y);
+	accz = getAcczValue(ACCZ_Y);
+	gyro = getGyroValue(GYRO_Y);
 	
 	cur_angle = ratio*(cur_angle+gyro*dt)+(1-ratio)*accz;
 	
@@ -83,19 +80,19 @@ int32_t balanceCtrl() {
 	return (int32_t) result;
 }
 
-#define RUN_SPEED 35
+#define RUN_SPEED 10
 
 int32_t get_set_speed(){
-	static const uint8_t max_cnt = 3;
+	const uint8_t max_cnt = 3;
 	static uint8_t cnt = 0;
 	if(cnt < max_cnt) { ++cnt; }
 	return RUN_SPEED*cnt/max_cnt;
 }
 
-float speedCalc(int32_t m_speed) {
-	static const float max_speed_i = 1300;
-	static const float speedCtrlKp = 350;
-	static const float speedCtrlKi = 10;
+float speedCalc(float m_speed) {
+	const float max_speed_i = 1300;
+	const float speedCtrlKp = 350;
+	const float speedCtrlKi = 10;
 	static float speed_err, speed_p, speed_i = 0;
 	
 	speed_err =  m_speed - get_set_speed();
@@ -108,12 +105,11 @@ float speedCalc(int32_t m_speed) {
 	return speed_p + speed_i;
 }
 
-//calculate the speed data
 int32_t speedCtrl() {
-	static const uint8_t maxSpeed_period = 100;
+	const uint8_t maxSpeed_period = 100;
 	static uint8_t speed_period = 0;
 	static float cur_speed = 0, pre_speed = 0, err_speed, result;
-	static int32_t m_speed;
+	float m_speed;
 	
 	m_speed = getSpeedData();
 	
@@ -131,16 +127,16 @@ int32_t speedCtrl() {
 }
 
 float directionCalc(){
-	static const float gyro_K = 1;
-	static const float sensor_Kp = 3;
-	static const float sensor_Kd = 300;
+	const float gyro_K = 0;
+	const float sensor_Kp = 3;
+	const float sensor_Kd = 300;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;
 	static float sensor_d;
 	
 	cur_sensor = getDirectionData();
-	gyro = getIMUValue(GYRO_X);
+	gyro = getGyroValue(GYRO_X);
 	
 	sensor_p = cur_sensor;
 	sensor_d = cur_sensor - pre_sensor;
@@ -157,9 +153,8 @@ int32_t directionCtrl(){
 	return (int32_t) result;
 }
 
-#define MAX_TURN_DUTY 600
+#define MAX_TURN_DUTY 500
 
-//control the motors by using the SPD data
 void motorControl(int32_t balance, int32_t speed, int32_t turn){
 	static int32_t tmp, left, right;
 	

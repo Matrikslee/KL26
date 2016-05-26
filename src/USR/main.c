@@ -5,7 +5,6 @@
 #include "adc.h"
 #include "TPM.h"
 #include "counter.h"
-
 #include "user.h"
 #include "app.h"
 
@@ -35,7 +34,8 @@ int main(void){
 		if(PIT_GetITStatus(PIT0, PIT_IT_TIF) == SET){
 			PIT_ClearITPendingBit(PIT0, PIT_IT_TIF);
 			
-			if(time < 300) { ++time; }
+			if(time == 250) { gyro_offsetInit(); }
+			if(time < 3000) { ++time; }
 			
 			balance = balanceCtrl();
 			speed = speedCtrl();

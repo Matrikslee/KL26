@@ -1,8 +1,12 @@
 #include "user.h"
 
+#define GYRO_X_OFFSET (0x07FC)
+#define GYRO_Y_OFFSET (0x0753)
+#define GYRO_Z_OFFSET (0)
 #define ACCZ_X_OFFSET (0)
 #define ACCZ_Y_OFFSET (0x078E)
 #define ACCZ_Z_OFFSET (0)
+#define _PI (3.1415926f)
 
 static const PeripheralMapTypeDef ADC_Check_Maps[] =
 {
@@ -45,33 +49,18 @@ uint32_t ADC_CalxMap(uint8_t chl){
 }
 
 const uint8_t adc_number = 10;
-const uint8_t adc_index[adc_number]={7,8,5,9,11,10,15,16,17,19};
+const uint8_t adc_index[adc_number]={9,11,10,7,8,5,15,16,17,19};
 //======================================================================
 //获取ADC口信号函数
 //入口：通道(channel):
-//	0,1,2:   加速度计 X、Y、Z
-//	3,4,5 :  陀螺仪   X、Y、Z
+//	0,1,2:   陀螺仪   X、Y、Z
+//	3,4,5 :  加速度计 X、Y、Z
 //	6,7,8,9: 电感
 //返回：信号值
 //======================================================================
 
 uint32_t ADC_GetValue(uint8_t index){
-	index = adc_index[index];
-	return ADC_GetConversionValue(ADC_CalxMap(index));
-}
-
-void inductance_userInit(void){
-	ADC_InitTypeDef initer;
-	initer.ADC_Precision = ADC_PRECISION_16BIT;
-	initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
-	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_LL);
-	ADC_Init(&initer);
-	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_LR);
-	ADC_Init(&initer);
-	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_RL);
-	ADC_Init(&initer);
-	initer.ADCxMap = ADC_CalxMap(INDUCTANCE_RR);
-	ADC_Init(&initer);
+	return ADC_GetConversionValue(ADC_CalxMap(adc_index[index]));
 }
 
 void GPIO_userInit(void){
@@ -106,7 +95,7 @@ void PWM_userInit(){
 
 static const uint8_t imu_number = 6;
 static float imu_ratio[imu_number] = {0.23578,0.120248,0,0,0.086,0};
-static uint32_t imu_offset[imu_number] = {0,0,0,ACCZ_X_OFFSET, ACCZ_Y_OFFSET, ACCZ_Z_OFFSET};
+static uint32_t imu_offset[imu_number] = {GYRO_X_OFFSET,GYRO_Y_OFFSET,GYRO_Z_OFFSET,ACCZ_X_OFFSET, ACCZ_Y_OFFSET, ACCZ_Z_OFFSET};
 
 //陀螺仪零偏值初始化函数
 void gyro_offsetInit(void) {
@@ -138,13 +127,36 @@ void IMU_userInit(){
 	
 	initer.ADCxMap = ADC_CalxMap(adc_index[GYRO_Y]);
 	ADC_Init(&initer);
-	gyro_offsetInit();
 }
+
+void inductance_userInit(void){
+	ADC_InitTypeDef initer;
+	initer.ADC_Precision = ADC_PRECISION_16BIT;
+	initer.ADC_TriggerSelect = ADC_TRIGGER_SW;
+	initer.ADCxMap = ADC_CalxMap(adc_index[INDUCTANCE_LL]);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(adc_index[INDUCTANCE_LR]);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(adc_index[INDUCTANCE_RL]);
+	ADC_Init(&initer);
+	initer.ADCxMap = ADC_CalxMap(adc_index[INDUCTANCE_RR]);
+	ADC_Init(&initer);
+}
+
 
 float getIMUValue(uint8_t index){
 	int32_t tmp_value;
 	tmp_value = ADC_GetValue(index)>>4;
-	return (tmp_value-(int32_t)imu_offset[index])*imu_ratio[index];
+	return ((float)tmp_value-imu_offset[index])*imu_ratio[index];
+}
+
+float getAcczValue(uint8_t index) {
+	float tmp = getIMUValue(index);
+	return asin((flimit(tmp,100))/100.)*180/_PI;
+}
+
+float getGyroValue(uint8_t index){
+	return getIMUValue(index);
 }
 
 float getInductanceValue(uint8_t index){
