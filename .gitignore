@@ -1,0 +1,17 @@
+*.ini
+*.o
+*.d
+*.crf
+*.txt
+*.axf
+*.htm
+*.bak
+*.hex
+*.tra
+*.plg
+*.lnp
+*.map
+*.dep
+*.lst
+*.uvguix*
+*.iex
