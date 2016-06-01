@@ -58,10 +58,10 @@ float getDirectionData(){
 
 int32_t balanceCtrl() {
 	const float dt = 0.005;
-	const float ratio = 0.995;
-	const float balance_Kp = 1300;
+	const float ratio = 0.99611;
+	const float balance_Kp = 1100;
   const float balance_Kd = 20;
-	const float set_angle = -4.3;
+	const float set_angle = -5.5;
 	static float cur_angle = 0;
 	float err_angle;
 	float accz;
@@ -80,22 +80,15 @@ int32_t balanceCtrl() {
 	return (int32_t) result;
 }
 
-#define RUN_SPEED 10
-
-int32_t get_set_speed(){
-	const uint8_t max_cnt = 3;
-	static uint8_t cnt = 0;
-	if(cnt < max_cnt) { ++cnt; }
-	return RUN_SPEED*cnt/max_cnt;
-}
+#define RUN_SPEED (35)
 
 float speedCalc(float m_speed) {
-	const float max_speed_i = 1300;
-	const float speedCtrlKp = 350;
-	const float speedCtrlKi = 10;
+	const float max_speed_i = 1100;
+	const float speedCtrlKp = 240;
+	const float speedCtrlKi = 5;
 	static float speed_err, speed_p, speed_i = 0;
 	
-	speed_err =  m_speed - get_set_speed();
+	speed_err =  m_speed - RUN_SPEED/(time>500?1:5);
 	
 	speed_p = speed_err*speedCtrlKp;
 	speed_i += speed_err*speedCtrlKi;
@@ -128,8 +121,8 @@ int32_t speedCtrl() {
 
 float directionCalc(){
 	const float gyro_K = 0;
-	const float sensor_Kp = 3;
-	const float sensor_Kd = 300;
+	const float sensor_Kp = 8;
+	const float sensor_Kd = 270;
 	static float cur_sensor = 0, pre_sensor = 0;
 	static float gyro;
 	static float sensor_p;

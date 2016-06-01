@@ -21,4 +21,6 @@ int32_t directionCtrl(void);
 //使用占空比控制电机
 void motorControl(int32_t,int32_t,int32_t);
 
+extern uint16_t time;
+
 #endif
